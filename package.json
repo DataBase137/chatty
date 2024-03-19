@@ -1,12 +1,14 @@
 {
-  "name": "chatty2",
+  "name": "chatty",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --check --ignore-path .gitignore .",
+    "format:fix": "prettier --write --ignore-path .gitignore ."
   },
   "dependencies": {
     "react": "^18",
@@ -14,14 +16,32 @@
     "next": "14.1.3"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.3.0",
     "eslint": "^8",
-    "eslint-config-next": "14.1.3"
-  }
+    "eslint-config-next": "14.1.3",
+    "eslint-config-prettier": "^9.1.0",
+    "postcss": "^8",
+    "prettier": "latest",
+    "prettier-plugin-tailwindcss": "^0.5.12",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5",
+    "@types/bun": "latest"
+  },
+  "module": "index.ts",
+  "type": "module",
+  "description": "a chat app",
+  "main": "postcss.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DataBase137/chatty.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DataBase137/chatty/issues"
+  },
+  "homepage": "https://github.com/DataBase137/chatty#readme"
 }
