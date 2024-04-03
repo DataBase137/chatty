@@ -10,11 +10,30 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  name      String   @unique
   email     String   @unique
   password  String
+  profile   Profile?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("user")
+}
+
+model Profile {
+  id       String    @id
+  name     String    @unique
+  user     User      @relation(fields: [id], references: [id])
+  messages Message[]
+
+  @@map("profile")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId String
+
+  @@map("message")
 }

@@ -58,17 +58,20 @@ const signUp = async (formData: FormData) => {
     const user = await prisma.user.create({
       data: {
         email: email as string,
-        name: name as string,
+        profile: {
+          create: { name: name as string },
+        },
         password: hashedPassword,
       },
     })
 
     return { type: "signup", user }
   } catch (error: any) {
+    console.error(error)
     return {
       type: "signup",
       // Error is set to the field that caused the error
-      error: `${error.meta.target[0]}`,
+      error: `${error.code === "P2002" && error.meta.target[0]}`,
     }
   }
 }
@@ -120,7 +123,7 @@ export const verifyAuth = async (token: string) => {
   }
 }
 
-export const getUser = async () => {
+export const getProfile = async () => {
   const token = cookies().get("token")?.value
 
   try {
@@ -130,14 +133,12 @@ export const getUser = async () => {
       algorithms: ["HS256"],
     })
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.profile.findUnique({
       where: {
         id: verified.payload.sub,
       },
       select: {
-        email: true,
         name: true,
-        id: true,
       },
     })
 

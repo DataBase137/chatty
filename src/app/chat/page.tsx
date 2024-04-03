@@ -1,7 +1,7 @@
-import { getUser, logOut } from "@/actions/auth"
+import { getProfile, logOut } from "@/actions/auth"
 
 const Page = async () => {
-  const user = await getUser()
+  const user = await getProfile()
 
   return (
     <>
