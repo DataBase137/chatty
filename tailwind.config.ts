@@ -1,16 +1,21 @@
 import type { Config } from "tailwindcss"
 
 const config: Config = {
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
-
-    // Or if using `src` directory:
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        text: "#221C16",
+        bg: "#F7F7F7",
+        primary: "#C0BDA5",
+        secondary: "#CC988E",
+        accent: "#F39E6D",
+        neutral: "#ECEBEB",
+      },
+      fontFamily: {
+        sans: ["Poppins", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 }

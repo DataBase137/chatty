@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  body {
+    @apply h-screen overflow-x-hidden scroll-smooth bg-bg text-text;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  ul {
+    @apply list-none;
+  }
+
+  img {
+    @apply h-auto max-w-full;
+  }
+}
