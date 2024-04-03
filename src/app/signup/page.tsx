@@ -5,7 +5,7 @@ const Page = () => {
   return (
     <>
       <Navbar />
-      <AuthForm name="sign up" username />
+      <AuthForm username />
     </>
   )
 }

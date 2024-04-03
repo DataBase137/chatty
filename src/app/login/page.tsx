@@ -5,7 +5,7 @@ const Page = () => {
   return (
     <>
       <Navbar />
-      <AuthForm name="log in" />
+      <AuthForm />
     </>
   )
 }
