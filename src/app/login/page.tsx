@@ -1,4 +1,4 @@
-import AuthForm from "@/components/AuthForm"
+import AuthForm from "@/containers/auth/form"
 import Navbar from "@/components/Navbar"
 
 const Page = () => {

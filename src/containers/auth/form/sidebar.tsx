@@ -1,17 +1,12 @@
-"use client"
-
-import { useFormState } from "react-dom"
-import { authenticate } from "@/actions/auth"
-import { useRef } from "react"
 import { useRouter } from "next/navigation"
-import Button from "../Button"
 
 const Sidebar = ({ username }: Readonly<{ username?: boolean }>) => {
   const router = useRouter()
+  const link = username ? "log in" : "sign up"
 
   return (
     <div
-      className={`mt-10 h-[600px] w-1/3 ${username ? "rounded-l-[100px]" : "rounded-r-[100px]"} flex min-w-[350px] flex-col items-center justify-center gap-3 bg-primary bg-opacity-30`}
+      className={`flex h-screen w-1/2 min-w-[350px] flex-col items-center justify-center gap-3 bg-primary bg-opacity-30`}
     >
       <div className="text-2xl">or continue with</div>
       <div className="mb-5 flex gap-7">
@@ -53,80 +48,11 @@ const Sidebar = ({ username }: Readonly<{ username?: boolean }>) => {
           onClick={() => router.push(`/${username ? "login" : "signup"}`)}
           className="cursor-pointer text-accent hover:text-opacity-80"
         >
-          {username ? "log in" : "sign up"}
+          {link}
         </span>
       </div>
     </div>
   )
 }
 
-const AuthForm = ({ username }: Readonly<{ username?: boolean }>) => {
-  const [state, formAction] = useFormState(authenticate, "")
-  const name = username ? "sign up" : "log in"
-  const emailRef = useRef<HTMLInputElement>(null)
-  const usernameRef = useRef<HTMLInputElement>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
-
-  switch (state) {
-    case "name":
-      usernameRef.current?.setCustomValidity("username already exists")
-      break
-    case "email":
-      emailRef.current?.setCustomValidity("email already exists")
-      break
-    case "password":
-      passwordRef.current?.setCustomValidity("incorrect password")
-      break
-    default:
-      break
-  }
-
-  return (
-    <div className="flex h-full w-screen items-center">
-      {!username && <Sidebar />}
-      <form
-        action={formAction}
-        className="flex h-full w-2/3 flex-col items-center justify-center gap-3 pt-20 text-xl"
-      >
-        {username && (
-          <input
-            type="text"
-            name="name"
-            placeholder="username"
-            autoComplete="off"
-            required
-            minLength={2}
-            ref={usernameRef}
-            className="h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
-            onChange={(e) => e.target.setCustomValidity("")}
-          />
-        )}
-        <input
-          type="email"
-          name="email"
-          placeholder="email"
-          autoComplete="username"
-          required
-          ref={emailRef}
-          className="h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
-          onChange={(e) => e.target.setCustomValidity("")}
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="password"
-          autoComplete="password"
-          required
-          minLength={6}
-          ref={passwordRef}
-          className="mb-2 h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
-          onChange={(e) => e.target.setCustomValidity("")}
-        />
-        <Button accent submit name={name} />
-      </form>
-      {username && <Sidebar username />}
-    </div>
-  )
-}
-
-export default AuthForm
+export default Sidebar

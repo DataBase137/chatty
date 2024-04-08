@@ -12,7 +12,9 @@ const Page = () => {
             connect effortlessly with the people you love, no matter where they
             are
           </p>
-          <Button route="/" name="learn more" />
+          <Button color="primary" route="/">
+            learn more
+          </Button>
         </div>
         <div className="flex h-screen w-1/2 items-center justify-center pt-20">
           <svg

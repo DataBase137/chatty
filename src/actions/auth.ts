@@ -6,6 +6,7 @@ import { nanoid } from "nanoid"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import bcrypt from "bcryptjs"
+import type { User } from "@prisma/client"
 
 const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET)
 
@@ -46,7 +47,7 @@ export const authenticate = async (
   const token = await generateToken(result.user!.id)
   setCookie("token", token, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
 
-  redirect("/chat")
+  redirect("/c")
 }
 
 const signUp = async (formData: FormData) => {
@@ -58,16 +59,13 @@ const signUp = async (formData: FormData) => {
     const user = await prisma.user.create({
       data: {
         email: email as string,
-        profile: {
-          create: { name: name as string },
-        },
+        name: name as string,
         password: hashedPassword,
       },
     })
 
     return { type: "signup", user }
   } catch (error: any) {
-    console.error(error)
     return {
       type: "signup",
       // Error is set to the field that caused the error
@@ -123,27 +121,27 @@ export const verifyAuth = async (token: string) => {
   }
 }
 
-export const getProfile = async () => {
-  const token = cookies().get("token")?.value
-
+export const getUser = async () => {
   try {
-    if (!token) throw new Error()
+    const token = cookies().get("token")?.value
+
+    if (!token) throw new Error("No token found")
 
     const verified = await jwtVerify(token, jwtSecret, {
       algorithms: ["HS256"],
     })
 
-    const user = await prisma.profile.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         id: verified.payload.sub,
       },
-      select: {
-        name: true,
-      },
     })
 
+    if (!user) throw new Error("User not found")
+
     return user
-  } catch {
-    return null
+  } catch (error) {
+    console.error(error)
+    return {} as User
   }
 }

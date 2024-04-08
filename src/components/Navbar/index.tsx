@@ -31,7 +31,11 @@ const Navbar = ({ button }: Readonly<{ button?: boolean }>) => {
             privacy
           </Link>
         </div>
-        {button && <Button route="/signup" accent small name="sign up" />}
+        {button && (
+          <Button route="/signup" color="accent" small>
+            sign up
+          </Button>
+        )}
       </div>
     </nav>
   )

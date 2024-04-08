@@ -9,31 +9,33 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
+  name      String   @unique
   email     String   @unique
   password  String
-  profile   Profile?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  @@map("user")
+  chats    Chat[]
+  messages Message[]
 }
 
-model Profile {
-  id       String    @id
-  name     String    @unique
-  user     User      @relation(fields: [id], references: [id])
-  messages Message[]
+model Chat {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 
-  @@map("profile")
+  messages     Message[]
+  participants User[]
 }
 
 model Message {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   text      String
   createdAt DateTime @default(now())
-  profile   Profile  @relation(fields: [profileId], references: [id])
-  profileId String
+  authorId  String
+  chatId    String
 
-  @@map("message")
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }

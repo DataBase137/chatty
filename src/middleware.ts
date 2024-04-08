@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyAuth } from "@/actions/auth"
+import { logOut, verifyAuth } from "@/actions/auth"
 
-export async function middleware(req: NextRequest) {
+export const middleware = async (req: NextRequest) => {
   const token = req.cookies.get("token")?.value
+  const publicPaths = ["/", "/login", "/signup"]
+  const res = NextResponse.next()
 
   if (!token) {
-    if (req.nextUrl.pathname === "/chat") {
+    if (!publicPaths.includes(req.nextUrl.pathname)) {
       return NextResponse.redirect(new URL("/login", req.url))
-    } else {
-      return NextResponse.next()
     }
+
+    return res
   }
 
   const verified = await verifyAuth(token)
 
-  if (req.nextUrl.pathname != "/chat" && verified) {
-    return NextResponse.redirect(new URL("/chat", req.url))
+  if (verified && publicPaths.includes(req.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL("/c", req.url))
   }
+
+  if (!verified) {
+    logOut()
+  }
+
+  return res
 }
 
 export const config = {

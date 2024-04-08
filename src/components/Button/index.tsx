@@ -1,23 +1,26 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useFormStatus } from "react-dom"
+import { FC } from "react"
 
-const Button = ({
-  small,
-  submit,
-  name,
-  action,
-  route,
-  accent,
-}: Readonly<{
+interface ButtonProps {
   small?: boolean
   submit?: boolean
-  name: string
   action?: () => void
   route?: string
-  accent?: boolean
-}>) => {
+  color?: "primary" | "secondary" | "accent"
+  children: React.ReactNode
+}
+
+import { useRouter } from "next/navigation"
+import { useFormStatus } from "react-dom"
+const Button: FC<ButtonProps> = ({
+  small,
+  submit,
+  action,
+  route,
+  color,
+  children,
+}) => {
   const router = useRouter()
   const { pending } = useFormStatus()
 
@@ -37,13 +40,15 @@ const Button = ({
       className={`
       ${small ? "rounded-xl px-8 py-3 hover:translate-y-[-2px]" : "rounded-2xl px-10 py-4 hover:translate-y-[-3px]"}
       ${
-        accent
+        color === "accent"
           ? "bg-accent bg-opacity-60 hover:bg-opacity-45 hover:shadow-secondary disabled:bg-opacity-50"
-          : "bg-primary hover:bg-opacity-80 hover:shadow-primary disabled:bg-opacity-70"
+          : color === "secondary"
+            ? "bg-secondary bg-opacity-30 hover:bg-opacity-40 hover:shadow-secondary disabled:bg-opacity-55"
+            : "bg-primary hover:bg-opacity-80 hover:shadow-primary disabled:bg-opacity-70"
       }
       w-max text-base text-text transition-all hover:shadow-[0_20px_60px_-15px] disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none`}
     >
-      {name}
+      {children}
     </button>
   )
 }
