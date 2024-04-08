@@ -93,7 +93,7 @@ const Messages: FC<MessagesProps> = ({ user, chatId, chatName }) => {
         <div className="flex h-full w-full flex-col items-center gap-4 pl-8">
           <div
             ref={chat}
-            className="flex h-full max-h-full w-full flex-col gap-4 overflow-y-scroll"
+            className="flex h-full max-h-full w-full flex-col gap-4 overflow-y-auto"
           >
             {messages &&
               messages.map((message, index) => {

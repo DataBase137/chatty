@@ -57,7 +57,7 @@ const Sidebar: FC<SidebarProps> = ({ user, chatId }) => {
         <Input placeholder="search chats" small />
         <Button userId={user.id} />
       </div>
-      <div className="flex flex-col gap-4 overflow-y-scroll">
+      <div className="flex flex-col gap-4 overflow-y-auto">
         {chats &&
           chats.map((chat) => (
             <Chat
