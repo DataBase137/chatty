@@ -65,6 +65,7 @@ const Sidebar: FC<SidebarProps> = ({ user, chatId }) => {
               chat={chat}
               selected={chatId === chat.id}
               you={chat.messages && chat.messages[0]?.author.name === user.name}
+              userId={user.id}
             />
           ))}
       </div>

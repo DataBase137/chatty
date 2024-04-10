@@ -13,24 +13,16 @@ export const getChats = async (userId: string) => {
           },
         },
       },
-      orderBy: {
-        updatedAt: "desc",
-      },
       include: {
         participants: true,
         messages: {
-          orderBy: {
-            createdAt: "desc",
-          },
+          orderBy: { createdAt: "desc" },
           take: 1,
-          include: {
-            author: {
-              select: {
-                name: true,
-              },
-            },
-          },
+          include: { author: { select: { name: true } } },
         },
+      },
+      orderBy: {
+        updatedAt: "desc",
       },
     })
 
@@ -90,8 +82,6 @@ export const sendMessage = async (
         },
       }),
     ])
-
-    // payload[0].createdAt = new Date(payload[0].createdAt)
 
     const pusher = new Pusher({
       appId: process.env.PUSHER_APP_ID as string,

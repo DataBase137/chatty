@@ -4,11 +4,14 @@ import { FC } from "react"
 import { FaPlus } from "react-icons/fa"
 import { createChat, sendMessage } from "@/actions/chat"
 import { useState, useEffect } from "react"
+import { addFriend } from "@/actions/friends"
 
 const Button: FC<{ userId: string }> = ({ userId }) => {
   return (
     <button
-      onClick={() => createChat(userId)}
+      onClick={() =>
+        addFriend("cluu43jfh0008d672qi28ui09", "cluu42i440007d672b9ubnibg")
+      }
       className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl bg-neutral bg-opacity-80 text-xl text-text text-opacity-70 hover:bg-text hover:bg-opacity-10"
     >
       <FaPlus />

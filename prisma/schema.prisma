@@ -11,26 +11,15 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   name      String
-  email     String
-  password  String
+  email     String   @unique
+  password  String   @unique
   createdAt DateTime @default(now())
 
   chats    Chat[]
   messages Message[]
-  friends  Friend[]  @relation(name: "user")
-  friendOf Friend[]  @relation(name: "friend")
+  friends  User[]    @relation("friends")
 
-  @@unique([email, password])
-}
-
-model Friend {
-  userId   String
-  friendId String
-
-  user   User @relation(name: "user", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  friend User @relation(name: "friend", fields: [friendId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@id([userId, friendId])
+  userFriends User[] @relation("friends")
 }
 
 model Chat {
