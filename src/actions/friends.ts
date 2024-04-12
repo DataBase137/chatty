@@ -32,11 +32,10 @@ export const addFriend = async (userIdA: string, userIdB: string) => {
 
     await prisma.chat.create({
       data: {
-        name: "direct",
+        isGroup: false,
         participants: {
           connect: [{ id: userIdA }, { id: userIdB }],
         },
-        direct: true,
       },
     })
   } catch (error) {

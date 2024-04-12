@@ -14,6 +14,7 @@ model User {
   email     String   @unique
   password  String   @unique
   createdAt DateTime @default(now())
+  avatarUrl String?
 
   chats    Chat[]
   messages Message[]
@@ -23,10 +24,11 @@ model User {
 }
 
 model Chat {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  name          String?
+  createdAt     DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+  isGroup       Boolean  @default(true)
 
   messages     Message[]
   participants User[]
@@ -34,7 +36,8 @@ model Chat {
 
 model Message {
   id        String   @id @default(cuid())
-  text      String
+  text      String?
+  image     String?
   createdAt DateTime @default(now())
   authorId  String
   chatId    String

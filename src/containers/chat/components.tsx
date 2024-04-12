@@ -4,17 +4,16 @@ import { FC } from "react"
 import { FaPlus } from "react-icons/fa"
 import { createChat, sendMessage } from "@/actions/chat"
 import { useState, useEffect } from "react"
-import { addFriend } from "@/actions/friends"
+import { logOut } from "@/actions/auth"
+import { FaRightFromBracket } from "react-icons/fa6"
 
-const Button: FC<{ userId: string }> = ({ userId }) => {
+const Button: FC<{ userId?: string }> = ({ userId }) => {
   return (
     <button
-      onClick={() =>
-        addFriend("cluu43jfh0008d672qi28ui09", "cluu42i440007d672b9ubnibg")
-      }
-      className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl bg-neutral bg-opacity-80 text-xl text-text text-opacity-70 hover:bg-text hover:bg-opacity-10"
+      onClick={() => (userId ? createChat(userId) : logOut())}
+      className="flex cursor-pointer items-center justify-center rounded-xl bg-neutral bg-opacity-80 px-3.5 py-3.5 text-xl text-text text-opacity-70 hover:bg-text hover:bg-opacity-10"
     >
-      <FaPlus />
+      {userId ? <FaPlus /> : <FaRightFromBracket />}
     </button>
   )
 }

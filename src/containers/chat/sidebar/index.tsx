@@ -2,7 +2,6 @@
 
 import { FC, useCallback, useEffect, useState } from "react"
 import { getChats } from "@/actions/chat"
-import { User } from "@prisma/client"
 import Chat from "./chat"
 import { Button, Input } from "../components"
 import Pusher from "pusher-js"
@@ -57,7 +56,7 @@ const Sidebar: FC<SidebarProps> = ({ user, chatId }) => {
         <Input placeholder="search chats" small />
         <Button userId={user.id} />
       </div>
-      <div className="flex flex-col gap-4 overflow-y-auto">
+      <div className="flex h-full flex-col gap-4 overflow-y-auto">
         {chats &&
           chats.map((chat) => (
             <Chat
@@ -68,6 +67,14 @@ const Sidebar: FC<SidebarProps> = ({ user, chatId }) => {
               userId={user.id}
             />
           ))}
+      </div>
+      <div className="flex w-full items-center gap-2">
+        <div className="flex h-full w-full cursor-pointer items-center rounded-xl bg-neutral bg-opacity-80 px-4 hover:bg-text hover:bg-opacity-10">
+          <div className="text-base font-medium text-text text-opacity-70">
+            {user.name}
+          </div>
+        </div>
+        <Button />
       </div>
     </div>
   )

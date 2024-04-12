@@ -6,7 +6,6 @@ import { nanoid } from "nanoid"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import bcrypt from "bcryptjs"
-import type { User } from "@prisma/client"
 
 const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET)
 
@@ -131,10 +130,11 @@ export const getUser = async () => {
       algorithms: ["HS256"],
     })
 
-    const user = await prisma.user.findUnique({
+    const user: User | null = await prisma.user.findUnique({
       where: {
         id: verified.payload.sub,
       },
+      include: { friends: true },
     })
 
     if (!user) throw new Error("User not found")

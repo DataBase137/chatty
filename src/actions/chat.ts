@@ -5,7 +5,7 @@ import Pusher from "pusher"
 
 export const getChats = async (userId: string) => {
   try {
-    const chats = await prisma.chat.findMany({
+    const chats: Chat[] = await prisma.chat.findMany({
       where: {
         participants: {
           some: {
@@ -22,7 +22,7 @@ export const getChats = async (userId: string) => {
         },
       },
       orderBy: {
-        updatedAt: "desc",
+        lastMessageAt: "desc",
       },
     })
 
@@ -49,7 +49,7 @@ export const getMessages = async (chatId?: string) => {
       take: 50,
     })
 
-    return messages.reverse()
+    return messages.reverse() as Message[] | null
   } catch (error) {
     console.error(error)
     return null
@@ -78,7 +78,7 @@ export const sendMessage = async (
           id: chatId,
         },
         data: {
-          updatedAt: new Date(),
+          lastMessageAt: new Date(),
         },
       }),
     ])
@@ -137,6 +137,14 @@ export const verifyChat = async (userId: string, chatId: string) => {
           some: {
             id: userId,
           },
+        },
+      },
+      include: {
+        participants: true,
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { author: { select: { name: true } } },
         },
       },
     })

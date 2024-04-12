@@ -2,7 +2,6 @@
 
 import { FC, Fragment, useState, useEffect, useCallback, useRef } from "react"
 import { getMessages } from "@/actions/chat"
-import { User } from "@prisma/client"
 import Message from "./message"
 import { Input } from "../components"
 import Pusher from "pusher-js"
@@ -10,7 +9,7 @@ import Pusher from "pusher-js"
 interface MessagesProps {
   user: User
   chatId?: string
-  chatName?: string
+  chatName?: string | null
 }
 
 const Messages: FC<MessagesProps> = ({ user, chatId, chatName }) => {

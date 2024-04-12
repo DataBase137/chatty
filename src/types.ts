@@ -1,8 +1,9 @@
 type Chat = {
   id: string
-  name: string
+  name: string | null
+  isGroup: boolean
   createdAt: Date
-  updatedAt: Date
+  lastMessageAt: Date
 } & {
   participants: {
     id: string
@@ -15,7 +16,7 @@ type Chat = {
   messages:
     | {
         id: string
-        text: string
+        text: string | null
         createdAt: Date
         authorId: string
         author: {
@@ -35,8 +36,27 @@ type Message = {
   author: {
     id: string
     name: string
+    avatarUrl: string | null
     createdAt: Date
     email: string
     password: string
   }
+}
+
+type User = {
+  id: string
+  name: string
+  email: string
+  password: string
+  createdAt: Date
+  avatarUrl: string | null
+} & {
+  friends: {
+    id: string
+    name: string
+    email: string
+    password: string
+    createdAt: Date
+    avatarUrl: string | null
+  }[]
 }

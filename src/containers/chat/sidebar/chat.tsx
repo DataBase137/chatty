@@ -17,15 +17,15 @@ const Chat: FC<ChatProps> = ({ you, chat, selected, userId }) => {
     >
       <div className="flex w-full justify-between">
         <h3 className="text-xl font-medium">
-          {chat.name === "direct"
+          {chat.name && !chat.isGroup
             ? chat.participants.filter(
                 (participant) => participant.id !== userId
               )[0].name
             : chat.name}
         </h3>
-        <DateFormat date={chat.updatedAt} />
+        <DateFormat date={chat.lastMessageAt} />
       </div>
-      <p>{`${chat.messages?.length ? `${you ? "you" : chat.messages?.[0]?.author.name}: ${chat.messages?.[0]?.text.slice(0, 24)}${chat.messages?.[0]?.text.length >= 24 ? "..." : ""}` : "send a message"}`}</p>
+      <p>{`${chat.messages?.length ? `${you ? "you" : chat.messages?.[0]?.author.name}: ${chat.messages[0].text ? `${chat.messages[0].text.slice(0, 24)}${chat.messages[0].text.length >= 24 ? "..." : ""}` : "image"}` : "send a message"}`}</p>
     </Link>
   )
 }
