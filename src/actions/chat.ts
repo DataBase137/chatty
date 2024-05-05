@@ -3,13 +3,13 @@
 import prisma from "@/lib/db"
 import Pusher from "pusher"
 
-export const getChats = async (userId: string) => {
+export const getChats = async (id: string) => {
   try {
     const chats: Chat[] = await prisma.chat.findMany({
       where: {
         participants: {
           some: {
-            id: userId,
+            id,
           },
         },
       },
@@ -33,8 +33,7 @@ export const getChats = async (userId: string) => {
   }
 }
 
-export const getMessages = async (chatId?: string) => {
-  if (!chatId) return null
+export const getMessages = async (chatId: string) => {
   try {
     const messages = await prisma.message.findMany({
       where: {
@@ -99,32 +98,23 @@ export const sendMessage = async (
   }
 }
 
-export const createChat = async (userId: string) => {
+export const createChat = async (id: string) => {
   try {
-    await prisma.chat.create({
+    const chat = await prisma.chat.create({
       data: {
         name: "untitled chat",
         participants: {
           connect: {
-            id: userId,
+            id,
           },
         },
       },
     })
-  } catch (error) {
-    console.error(error)
-  }
-}
 
-export const deleteChat = async (chatId: string) => {
-  try {
-    await prisma.chat.delete({
-      where: {
-        id: chatId,
-      },
-    })
+    return chat as Chat
   } catch (error) {
     console.error(error)
+    return {} as Chat
   }
 }
 

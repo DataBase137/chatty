@@ -22,4 +22,32 @@
   img {
     @apply h-auto max-w-full;
   }
+
+  .button {
+    @apply flex cursor-pointer items-center justify-center rounded-xl bg-neutral bg-opacity-80 px-3.5 py-3.5 text-xl text-text text-opacity-70 hover:bg-text hover:bg-opacity-10;
+  }
+
+  .button-primary {
+    @apply bg-primary hover:bg-opacity-80 disabled:bg-opacity-70;
+  }
+
+  .button-secondary {
+    @apply bg-secondary bg-opacity-30 hover:bg-opacity-40 disabled:bg-opacity-55;
+  }
+
+  .button-accent {
+    @apply bg-accent bg-opacity-60 hover:bg-opacity-45 disabled:bg-opacity-50;
+  }
+
+  .button-small {
+    @apply rounded-xl px-8 py-3 hover:translate-y-[-2px];
+  }
+
+  .button-large {
+    @apply rounded-2xl px-10 py-4 hover:translate-y-[-3px];
+  }
+
+  .button-color {
+    @apply w-max text-base text-text transition-all hover:shadow-[0_20px_60px_-15px] disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none;
+  }
 }

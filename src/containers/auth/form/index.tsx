@@ -1,14 +1,27 @@
 "use client"
 
-import { useFormState } from "react-dom"
+import { useFormState, useFormStatus } from "react-dom"
 import { authenticate } from "@/actions/auth"
-import { useRef } from "react"
-import Button from "@/components/Button"
-import Sidebar from "./sidebar"
+import { FC, useRef } from "react"
+import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa6"
+import Link from "next/link"
 
-const Form = ({ username }: Readonly<{ username?: boolean }>) => {
+const Button: FC<{ name: string }> = ({ name }) => {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="button-color button-secondary button-large hover:shadow-secondary"
+    >
+      {name}
+    </button>
+  )
+}
+
+const Form: FC<{ username?: boolean }> = ({ username }) => {
   const [state, formAction] = useFormState(authenticate, "")
-  const name = username ? "sign up" : "log in"
   const emailRef = useRef<HTMLInputElement>(null)
   const usernameRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -67,11 +80,27 @@ const Form = ({ username }: Readonly<{ username?: boolean }>) => {
           className="mb-2 h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
           onChange={(e) => e.target.setCustomValidity("")}
         />
-        <Button color="secondary" submit>
-          {name}
-        </Button>
+        <Button name={username ? "sign up" : "log in"} />
       </form>
-      <Sidebar username={username} />
+      <div
+        className={`flex h-screen w-1/2 min-w-[350px] flex-col items-center justify-center gap-3 bg-primary bg-opacity-30`}
+      >
+        <div className="text-2xl">or continue with</div>
+        <div className="mb-5 flex gap-7">
+          <FaApple className="cursor-pointer text-5xl hover:opacity-80" />
+          <FaGoogle className="cursor-pointer text-5xl hover:opacity-80" />
+          <FaFacebook className="cursor-pointer text-5xl hover:opacity-80" />
+        </div>
+        <div className="text-2xl">
+          {username ? "already a user? " : "not a user yet? "}
+          <Link
+            href={username ? "login" : "signup"}
+            className="cursor-pointer text-accent hover:text-opacity-80"
+          >
+            {username ? "log in" : "sign up"}
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

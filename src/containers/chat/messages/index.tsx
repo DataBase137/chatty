@@ -1,15 +1,15 @@
 "use client"
 
-import { FC, Fragment, useState, useEffect, useCallback, useRef } from "react"
-import { getMessages } from "@/actions/chat"
-import Message from "./message"
-import { Input } from "../components"
+import { FC, Fragment, useState, useEffect, useRef, useCallback } from "react"
 import Pusher from "pusher-js"
+import { User } from "@prisma/client"
+import { getMessages, sendMessage } from "@/actions/chat"
+import { FaPaperPlane } from "react-icons/fa6"
 
 interface MessagesProps {
   user: User
-  chatId?: string
-  chatName?: string | null
+  chatId: string
+  chatName: string
 }
 
 const Messages: FC<MessagesProps> = ({ user, chatId, chatName }) => {
@@ -19,7 +19,7 @@ const Messages: FC<MessagesProps> = ({ user, chatId, chatName }) => {
   const fetchMessages = useCallback(async () => {
     const messages = await getMessages(chatId)
 
-    if (messages) setMessages(messages)
+    setMessages(messages || [])
   }, [chatId])
 
   useEffect(() => {
@@ -84,56 +84,69 @@ const Messages: FC<MessagesProps> = ({ user, chatId, chatName }) => {
     return () => {
       pusher.unsubscribe(`chat-${chatId}`)
     }
-  }, [chatId, messages])
+  }, [chatId])
+
+  const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const text = String(formData.get("text")).trim()
+
+    if (text) {
+      sendMessage(chatId, user.id, text)
+    }
+
+    e.currentTarget.reset()
+  }
 
   return (
-    <>
-      {chatId && chatName ? (
-        <div className="flex h-full w-full flex-col items-center gap-4 pl-8">
-          <div
-            ref={chat}
-            className="flex h-full max-h-full w-full flex-col gap-4 overflow-y-auto"
-          >
-            {messages &&
-              messages.map((message, index) => {
-                const timestamp = new Date(message.createdAt)
-                const oldTimestamp = new Date(messages[index - 1]?.createdAt)
+    <div className="flex h-full w-full flex-col items-center gap-4 pl-8">
+      <div
+        ref={chat}
+        className="flex h-full max-h-full w-full flex-col gap-4 overflow-y-auto"
+      >
+        {messages &&
+          messages.map((message, index) => {
+            const timestamp = new Date(message.createdAt)
+            const oldTimestamp = new Date(messages[index - 1]?.createdAt)
 
-                const conditional =
-                  (index !== 0 &&
-                    Math.abs(timestamp.getTime() - oldTimestamp.getTime()) >=
-                      20 * 60 * 1000) ||
-                  index === 0
+            const conditional =
+              (index !== 0 &&
+                Math.abs(timestamp.getTime() - oldTimestamp.getTime()) >=
+                  20 * 60 * 1000) ||
+              index === 0
 
-                return (
-                  <Fragment key={message.id}>
-                    {conditional && (
-                      <p className="flex w-full justify-center text-xs opacity-80">
-                        {formatDateDiff(message.createdAt)}
-                      </p>
-                    )}
-                    <Message
-                      message={message}
-                      author={user.id === message.authorId}
-                    />
-                  </Fragment>
-                )
-              })}
-          </div>
-          <Input
-            placeholder={`message ${chatName}`}
-            chatId={chatId}
-            userId={user.id}
-          />
-        </div>
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <p className="text-text text-opacity-60">
-            select a chat to start messaging
-          </p>
-        </div>
-      )}
-    </>
+            const author = user.id === message.authorId
+
+            return (
+              <Fragment key={message.id}>
+                {conditional && (
+                  <p className="flex w-full justify-center text-xs opacity-80">
+                    {formatDateDiff(message.createdAt)}
+                  </p>
+                )}
+                <div className={`${author && "justify-end"} flex w-full`}>
+                  <div
+                    className={`${author ? "bg-primary bg-opacity-80" : "bg-neutral bg-opacity-70"} w-max rounded-2xl px-5 py-3 text-text text-opacity-70`}
+                  >
+                    <div className="text-lg">{message.text}</div>
+                  </div>
+                </div>
+              </Fragment>
+            )
+          })}
+      </div>
+      <form className="flex gap-2" onSubmit={(e) => handleSendMessage(e)}>
+        <input
+          placeholder={`message ${chatName}`}
+          name="text"
+          className="h-12 w-[768px] rounded-xl bg-neutral bg-opacity-80 px-5 text-base text-text outline-0 hover:bg-text hover:bg-opacity-[0.08] focus:bg-text focus:bg-opacity-10"
+          autoComplete="off"
+        />
+        <button type="submit" className="button">
+          <FaPaperPlane />
+        </button>
+      </form>
+    </div>
   )
 }
 

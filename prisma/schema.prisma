@@ -14,21 +14,16 @@ model User {
   email     String   @unique
   password  String   @unique
   createdAt DateTime @default(now())
-  avatarUrl String?
 
   chats    Chat[]
   messages Message[]
-  friends  User[]    @relation("friends")
-
-  userFriends User[] @relation("friends")
 }
 
 model Chat {
   id            String   @id @default(cuid())
-  name          String?
+  name          String
   createdAt     DateTime @default(now())
   lastMessageAt DateTime @default(now())
-  isGroup       Boolean  @default(true)
 
   messages     Message[]
   participants User[]
@@ -36,12 +31,11 @@ model Chat {
 
 model Message {
   id        String   @id @default(cuid())
-  text      String?
-  image     String?
+  text      String
   createdAt DateTime @default(now())
   authorId  String
   chatId    String
 
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }

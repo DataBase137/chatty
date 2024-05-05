@@ -17,7 +17,5 @@ a chat app
 
 ## known bugs
 
-- chats are not updated realtime
-- when switching chats the date will be changed but also reverted
-- error when adding friends
-- error selecting direct chat
+- slow data loading
+- when last user in chat is deleted, chat does not get deleted

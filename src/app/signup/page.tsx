@@ -1,7 +1,8 @@
+import { NextPage } from "next"
 import AuthForm from "@/containers/auth/form"
 import Navbar from "@/components/Navbar"
 
-const Page = () => {
+const Page: NextPage = () => {
   return (
     <>
       <Navbar />

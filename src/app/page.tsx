@@ -1,7 +1,8 @@
+import { NextPage } from "next"
 import Navbar from "@/components/Navbar"
-import Button from "@/components/Button"
+import Link from "next/link"
 
-const Page = () => {
+const Page: NextPage = () => {
   return (
     <>
       <Navbar button />
@@ -12,9 +13,12 @@ const Page = () => {
             connect effortlessly with the people you love, no matter where they
             are
           </p>
-          <Button color="primary" route="/">
+          <Link
+            className="button-color button-large button-primary hover:shadow-primary"
+            href="/"
+          >
             learn more
-          </Button>
+          </Link>
         </div>
         <div className="flex h-screen w-1/2 items-center justify-center pt-20">
           <svg

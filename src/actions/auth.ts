@@ -6,6 +6,7 @@ import { nanoid } from "nanoid"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import bcrypt from "bcryptjs"
+import { User } from "@prisma/client"
 
 const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET)
 
@@ -102,7 +103,7 @@ const login = async (formData: FormData) => {
   }
 }
 
-export const logOut = () => {
+export const logOut = async () => {
   cookies().delete("token")
 
   redirect("/login")
@@ -134,7 +135,6 @@ export const getUser = async () => {
       where: {
         id: verified.payload.sub,
       },
-      include: { friends: true },
     })
 
     if (!user) throw new Error("User not found")
@@ -144,4 +144,14 @@ export const getUser = async () => {
     console.error(error)
     return {} as User
   }
+}
+
+export const deleteUser = async (userId: string) => {
+  await prisma.user.delete({
+    where: {
+      id: userId,
+    },
+  })
+
+  await logOut()
 }
