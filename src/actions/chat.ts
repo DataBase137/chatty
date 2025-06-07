@@ -2,17 +2,13 @@
 
 import prisma from "@/lib/db"
 import Pusher from "pusher"
+import { getUser } from "./auth"
+import { User } from "@prisma/client"
 
-export const getChats = async (id: string) => {
+export const getChats = async (id: string): Promise<Chat[]> => {
   try {
     const chats: Chat[] = await prisma.chat.findMany({
-      where: {
-        participants: {
-          some: {
-            id,
-          },
-        },
-      },
+      where: { participants: { some: { id } } },
       include: {
         participants: true,
         messages: {
@@ -21,37 +17,29 @@ export const getChats = async (id: string) => {
           include: { author: { select: { name: true } } },
         },
       },
-      orderBy: {
-        lastMessageAt: "desc",
-      },
+      orderBy: { lastMessageAt: "desc" },
     })
 
     return chats
   } catch (error) {
     console.error(error)
-    return null
+    return []
   }
 }
 
-export const getMessages = async (chatId: string) => {
+export const getMessages = async (chatId: string): Promise<Message[]> => {
   try {
     const messages = await prisma.message.findMany({
-      where: {
-        chatId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        author: true,
-      },
+      where: { chatId },
+      orderBy: { createdAt: "desc" },
+      include: { author: true },
       take: 50,
     })
 
-    return messages.reverse() as Message[] | null
+    return messages.reverse() as Message[] | []
   } catch (error) {
     console.error(error)
-    return null
+    return []
   }
 }
 
@@ -59,26 +47,16 @@ export const sendMessage = async (
   chatId: string,
   authorId: string,
   text: string
-) => {
+): Promise<void> => {
   try {
     const payload = await prisma.$transaction([
       prisma.message.create({
-        data: {
-          chatId,
-          authorId,
-          text,
-        },
-        include: {
-          author: true,
-        },
+        data: { chatId, authorId, text },
+        include: { author: true },
       }),
       prisma.chat.update({
-        where: {
-          id: chatId,
-        },
-        data: {
-          lastMessageAt: new Date(),
-        },
+        where: { id: chatId },
+        data: { lastMessageAt: new Date() },
       }),
     ])
 
@@ -98,17 +76,10 @@ export const sendMessage = async (
   }
 }
 
-export const createChat = async (id: string) => {
+export const createChat = async (id: string): Promise<Chat> => {
   try {
     const chat = await prisma.chat.create({
-      data: {
-        name: "untitled chat",
-        participants: {
-          connect: {
-            id,
-          },
-        },
-      },
+      data: { name: "untitled chat", participants: { connect: { id } } },
     })
 
     return chat as Chat
@@ -118,17 +89,13 @@ export const createChat = async (id: string) => {
   }
 }
 
-export const verifyChat = async (userId: string, chatId: string) => {
+export const verifyChat = async (
+  userId: string,
+  chatId: string
+): Promise<Chat | null> => {
   try {
-    const chat = await prisma.chat.findFirst({
-      where: {
-        id: chatId,
-        participants: {
-          some: {
-            id: userId,
-          },
-        },
-      },
+    const chat: Chat | null = await prisma.chat.findFirst({
+      where: { id: chatId, participants: { some: { id: userId } } },
       include: {
         participants: true,
         messages: {
@@ -143,5 +110,34 @@ export const verifyChat = async (userId: string, chatId: string) => {
   } catch (error) {
     console.error(error)
     return null
+  }
+}
+
+export const fetchData = async (
+  chatId?: string
+): Promise<{
+  user: User
+  chat: Chat | null
+  chats: Chat[]
+  messages: Message[]
+}> => {
+  try {
+    const user = await getUser()
+
+    const chats = await getChats(user.id)
+
+    let messages: Message[] = []
+    let chat: Chat | null = null
+
+    if (chatId) {
+      chat = await verifyChat(user.id, chatId)
+
+      messages = await getMessages(chatId)
+    }
+
+    return { user, chat, chats, messages }
+  } catch (error) {
+    console.error(error)
+    return { user: {} as User, chat: null, chats: [], messages: [] }
   }
 }

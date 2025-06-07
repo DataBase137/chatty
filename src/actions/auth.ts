@@ -22,8 +22,8 @@ export const generateToken = async (id: string) => {
   return token
 }
 
-const setCookie = (name: string, data: string, expires: Date) => {
-  cookies().set(name, data, {
+const setCookie = async (name: string, data: string, expires: Date) => {
+  ;(await cookies()).set(name, data, {
     httpOnly: true,
     path: "/",
     secure: process.env.NODE_ENV === "production",
@@ -35,7 +35,6 @@ export const authenticate = async (
   _currentState: unknown,
   formData: FormData
 ) => {
-  // If the form has a username field, it's a signup form
   const result = await (formData.get("name")
     ? signUp(formData)
     : login(formData))
@@ -45,7 +44,11 @@ export const authenticate = async (
   }
 
   const token = await generateToken(result.user!.id)
-  setCookie("token", token, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+  await setCookie(
+    "token",
+    token,
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  )
 
   redirect("/c")
 }
@@ -68,7 +71,6 @@ const signUp = async (formData: FormData) => {
   } catch (error: any) {
     return {
       type: "signup",
-      // Error is set to the field that caused the error
       error: `${error.code === "P2002" && error.meta.target[0]}`,
     }
   }
@@ -104,7 +106,7 @@ const login = async (formData: FormData) => {
 }
 
 export const logOut = async () => {
-  cookies().delete("token")
+  ;(await cookies()).delete("token")
 
   redirect("/login")
 }
@@ -123,7 +125,7 @@ export const verifyAuth = async (token: string) => {
 
 export const getUser = async () => {
   try {
-    const token = cookies().get("token")?.value
+    const token = (await cookies()).get("token")?.value
 
     if (!token) throw new Error("No token found")
 

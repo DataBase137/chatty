@@ -1,30 +1,16 @@
 "use client"
 
-import { useFormState, useFormStatus } from "react-dom"
+import { useFormStatus } from "react-dom"
 import { authenticate } from "@/actions/auth"
-import { FC, useRef } from "react"
-import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa6"
+import { FC, useActionState, useRef } from "react"
 import Link from "next/link"
 
-const Button: FC<{ name: string }> = ({ name }) => {
-  const { pending } = useFormStatus()
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="button-color button-secondary button-large hover:shadow-secondary"
-    >
-      {name}
-    </button>
-  )
-}
-
 const Form: FC<{ username?: boolean }> = ({ username }) => {
-  const [state, formAction] = useFormState(authenticate, "")
+  const [state, formAction] = useActionState(authenticate, "")
   const emailRef = useRef<HTMLInputElement>(null)
   const usernameRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
+  const { pending } = useFormStatus()
 
   switch (state) {
     case "name":
@@ -41,10 +27,10 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
   }
 
   return (
-    <div className="flex h-full w-screen items-center">
+    <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
       <form
         action={formAction}
-        className="flex h-full w-full flex-col items-center justify-center gap-3 pt-20 text-xl"
+        className="h-42 flex w-80 flex-col justify-center gap-2"
       >
         {username && (
           <input
@@ -55,7 +41,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
             required
             minLength={2}
             ref={usernameRef}
-            className="h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
+            className="focus:ring-secondary flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
             onChange={(e) => e.target.setCustomValidity("")}
           />
         )}
@@ -66,7 +52,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
           autoComplete="username"
           required
           ref={emailRef}
-          className="h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
+          className="focus:ring-secondary flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
           onChange={(e) => e.target.setCustomValidity("")}
         />
         <input
@@ -77,29 +63,27 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
           required
           minLength={6}
           ref={passwordRef}
-          className="mb-2 h-20 w-[25rem] rounded-2xl bg-neutral pl-7 text-text outline-0 placeholder-shown:!bg-neutral invalid:bg-red-100"
+          className="focus:ring-secondary flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
           onChange={(e) => e.target.setCustomValidity("")}
         />
-        <Button name={username ? "sign up" : "log in"} />
+        <button
+          className="bg-secondary mt-2 rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
+          type="submit"
+          disabled={pending}
+        >
+          {username ? "sign up" : "log in"}
+        </button>
       </form>
-      <div
-        className={`flex h-screen w-1/2 min-w-[350px] flex-col items-center justify-center gap-3 bg-primary bg-opacity-30`}
-      >
-        <div className="text-2xl">or continue with</div>
-        <div className="mb-5 flex gap-7">
-          <FaApple className="cursor-pointer text-5xl hover:opacity-80" />
-          <FaGoogle className="cursor-pointer text-5xl hover:opacity-80" />
-          <FaFacebook className="cursor-pointer text-5xl hover:opacity-80" />
-        </div>
-        <div className="text-2xl">
-          {username ? "already a user? " : "not a user yet? "}
+      <div>
+        <p className="text-sm">
+          {username ? "already have an account? " : "don't have an account? "}
           <Link
-            href={username ? "login" : "signup"}
-            className="cursor-pointer text-accent hover:text-opacity-80"
+            href={username ? "/login" : "/signup"}
+            className="text-secondary"
           >
             {username ? "log in" : "sign up"}
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   )

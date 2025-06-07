@@ -5,15 +5,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        text: "#221C16",
-        bg: "#F7F7F7",
-        primary: "#C0BDA5",
-        secondary: "#CC988E",
-        accent: "#F39E6D",
-        neutral: "#ECEBEB",
+        primary: "#1F2937",
+        secondary: "#FF6B4A",
+        accent: "#FFE8D6",
+        plum: "#7B5EA7",
+        teal: "#4DD7B0",
+        dark: "#1F1F1F",
       },
       fontFamily: {
-        sans: ["Poppins", "sans-serif"],
+        sans: ["Inter", "Poppins", "sans-serif"],
       },
     },
   },
