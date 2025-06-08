@@ -5,12 +5,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: "#1F2937",
-        secondary: "#FF6B4A",
-        accent: "#FFE8D6",
+        sunset: "#FF6B4A",
+        peach: "#FFE8D6",
         plum: "#7B5EA7",
         teal: "#4DD7B0",
-        dark: "#1F1F1F",
+        dark: "#333333",
         light: "#F7F7F7",
       },
       fontFamily: {

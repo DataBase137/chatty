@@ -8,7 +8,7 @@ const Navbar: FC<{ button?: boolean }> = ({ button }) => {
       {button && (
         <Link
           href="/signup"
-          className="bg-secondary rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
+          className="bg-sunset rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
         >
           sign up
         </Link>

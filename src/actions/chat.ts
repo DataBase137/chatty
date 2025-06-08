@@ -4,6 +4,7 @@ import prisma from "@/lib/db"
 import Pusher from "pusher"
 import { getUser } from "./auth"
 import { User } from "@prisma/client"
+import { getFriendRequests } from "./friends"
 
 export const getChats = async (id: string): Promise<Chat[]> => {
   try {
@@ -126,14 +127,17 @@ export const fetchData = async (
   chatId?: string
 ): Promise<{
   user: User
-  chat: Chat | null
+  globChat: Chat | null
   chats: Chat[]
   messages: Message[]
+  friends: FriendRequest[]
 }> => {
   try {
     const user = await getUser()
 
     const chats = await getChats(user.id)
+
+    const friends = await getFriendRequests(user.id)
 
     let messages: Message[] = []
     let chat: Chat | null = null
@@ -144,10 +148,16 @@ export const fetchData = async (
       messages = await getMessages(chatId)
     }
 
-    return { user, chat, chats, messages }
+    return { user, globChat: chat, chats, messages, friends }
   } catch (error) {
     console.error(error)
-    return { user: {} as User, chat: null, chats: [], messages: [] }
+    return {
+      user: {} as User,
+      globChat: null,
+      chats: [],
+      messages: [],
+      friends: [],
+    }
   }
 }
 
@@ -185,6 +195,9 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
             },
           },
         },
+      },
+      include: {
+        participants: true,
       },
     })
 

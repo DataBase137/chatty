@@ -17,7 +17,7 @@ made with nextjs, tailwindcss, and prisma
 | postgres database with prisma accelerate | true      |
 | realtime messaging with pusher           | true      |
 | third-party authentication methods       | false     |
-| friends and dms                          | false     |
+| friends and dms                          | true      |
 | separate chat management                 | false     |
 | account customization and profiles       | false     |
 | mobile layout and responsive design      | true      |
@@ -29,10 +29,7 @@ made with nextjs, tailwindcss, and prisma
 
 ## known bugs
 
-- slow data loading
 - when last user in chat is deleted, chat does not get deleted
-- chats can't add users
-- chat doesn't listen for new messages if it isn't selected
 - scrollbar overlays sent messages
 
 ## license

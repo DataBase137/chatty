@@ -2,7 +2,6 @@
 
 import { createChat, findChat, getUsers } from "@/actions/chat"
 import { User } from "@prisma/client"
-import { group } from "console"
 import { useRouter } from "next/navigation"
 import { FC, useEffect, useState } from "react"
 import { FaXmark } from "react-icons/fa6"
@@ -21,18 +20,14 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
   const [groupExists, setGroupExists] = useState(false)
   const router = useRouter()
 
-  const toggleUser = (userId: string) => {
+  const toggleUser = (id: string) => {
     setSelectedUsers((prev) =>
-      prev.includes(userId)
-        ? prev.filter((u) => u !== userId)
-        : [...prev, userId]
+      prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id]
     )
   }
 
   const handleCreateChat = async () => {
     if (!selectedUsers.length) return
-
-    selectedUsers.push(userId)
 
     const chat = await createChat(selectedUsers, groupName)
 
@@ -44,8 +39,10 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
       setGroupExists(true)
       return
     }
-    const usersWithCurrent = [...selectedUsers, userId]
-    findChat(usersWithCurrent).then((chat) => {
+
+    const updatedUsers = [...selectedUsers, userId]
+
+    findChat(updatedUsers).then((chat) => {
       setGroupExists(!!chat)
     })
   }, [selectedUsers, userId])
@@ -102,10 +99,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2>create a new chat</h2>
-          <button
-            onClick={onClose}
-            className="text-primary hover:text-opacity-80"
-          >
+          <button onClick={onClose} className="text-dark hover:text-opacity-80">
             <FaXmark className="text-xl" />
           </button>
         </div>
@@ -115,7 +109,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
           value={groupName}
           disabled={groupExists}
           onChange={(e) => setGroupName(e.target.value)}
-          className="focus:ring-secondary mb-3 w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-red-50"
+          className="focus:ring-sunset mb-3 w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-red-50"
         />
 
         <input
@@ -123,7 +117,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
           placeholder="search users"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="focus:ring-secondary mb-3 w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
+          className="focus:ring-sunset mb-3 w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
         />
         <div className="mb-4 max-h-40 overflow-y-auto">
           {[
@@ -136,7 +130,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
           ].map((user) => (
             <label
               key={user.id}
-              className="hover:bg-secondary mb-2 flex cursor-pointer items-center rounded-lg p-2 hover:bg-opacity-10"
+              className="hover:bg-sunset mb-2 flex cursor-pointer items-center rounded-lg p-2 hover:bg-opacity-10"
             >
               <input
                 type="checkbox"
@@ -144,7 +138,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
                 onChange={() => toggleUser(user.id)}
                 className="peer hidden"
               />
-              <div className="border-secondary peer-checked:bg-secondary duration-10 mr-3 h-5 w-5 rounded-full border-2 transition-colors peer-checked:bg-opacity-90" />
+              <div className="border-sunset peer-checked:bg-sunset duration-10 mr-3 h-5 w-5 rounded-full border-2 transition-colors peer-checked:bg-opacity-90" />
               <span className="text-sm">{user.name}</span>
             </label>
           ))}
@@ -152,7 +146,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
             <button
               disabled={groupExists}
               onClick={handleCreateChat}
-              className="bg-secondary w-1/2 rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
+              className="bg-sunset w-1/2 rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
             >
               create chat
             </button>

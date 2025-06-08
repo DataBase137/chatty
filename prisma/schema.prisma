@@ -15,8 +15,11 @@ model User {
   password  String   @unique
   createdAt DateTime @default(now())
 
-  chats    Chat[]
+  sentRequests     FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+
   messages Message[]
+  chats    Chat[]
 }
 
 model Chat {
@@ -39,4 +42,24 @@ model Message {
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+
+  status   FriendshipStatus @default(PENDING)
+  sender   User             @relation("SentRequests", fields: [senderId], references: [id])
+  receiver User             @relation("ReceivedRequests", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
 }

@@ -41,3 +41,18 @@ type Message = {
     password: string
   }
 }
+
+type FriendRequest = {
+  senderId: string
+  receiverId: string
+} & {
+  sender: {
+    id: string
+    name: string
+  }
+} & {
+  receiver: {
+    id: string
+    name: string
+  }
+}
