@@ -1,14 +1,15 @@
 "use client"
 
 import { NextPage } from "next"
+import { fetchData } from "@/actions/chat"
 import { FC, useCallback, useEffect, useState } from "react"
-import { createChat, fetchData } from "@/actions/chat"
 import { FaGear, FaRightFromBracket } from "react-icons/fa6"
 import { FaPlus } from "react-icons/fa"
 import { logOut } from "@/actions/auth"
 import { User } from "@prisma/client"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import ChatModal from "@/containers/chat/modal"
 
 const DateFormat: FC<{ date: Date; className?: string }> = ({
   date,
@@ -64,6 +65,7 @@ const Page: NextPage = () => {
   const [chats, setChats] = useState<Chat[]>([])
   const [searchTerm, setSearchTerm] = useState<string>("")
   const router = useRouter()
+  const [modalOpen, setModalOpen] = useState<boolean>(false)
 
   const getData = useCallback(async () => {
     const data = await fetchData()
@@ -75,23 +77,37 @@ const Page: NextPage = () => {
       setUser(user)
       setChats(chats)
     })
-  }, [getData])
+  }, [getData, router])
 
-  const handleCreateChat = async () => {
-    if (user) {
-      const chat = await createChat(user.id)
-      setChats([chat, ...chats])
+  const formatChatName = (chat: Chat, userId: string) => {
+    if (chat.name && chat.isGroup) {
+      return chat.name
     }
+    return chat.participants
+      .filter((participant) => participant.id !== userId)
+      .map((participant) => participant.name)
+      .join(", ")
   }
 
   return (
     <div className="flex h-screen w-screen gap-8 p-8">
       {/* sidebar */}
       <div className="flex min-w-80 flex-col gap-3 px-4">
-        <h1 className="pl-1">chats</h1>
         {/* top module */}
-        <div className="flex gap-3 pb-2">
-          {/* search */}
+        <div className="flex flex-col gap-3 pb-2">
+          {/* very top */}
+          <div className="flex justify-between">
+            {/* header */}
+            <h1 className="pl-1">chats</h1>
+            {/* create chat button */}
+            <button
+              className="bg-secondary rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
+              onClick={() => setModalOpen(true)}
+            >
+              <FaPlus />
+            </button>
+          </div>
+          {/* search bar */}
           <input
             type="text"
             placeholder="search chats"
@@ -100,20 +116,13 @@ const Page: NextPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="focus:ring-secondary w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
           />
-          {/* create chat button */}
-          <button
-            className="bg-secondary rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
-            onClick={handleCreateChat}
-          >
-            <FaPlus />
-          </button>
         </div>
         {/* chat list */}
         <div className="flex h-full flex-col gap-2 overflow-y-auto">
           {chats &&
             chats
               .filter((chat) =>
-                chat.name.toLowerCase().includes(searchTerm.toLowerCase())
+                chat.name?.toLowerCase().includes(searchTerm.toLowerCase())
               )
               .map((chat) => (
                 // chat
@@ -124,7 +133,7 @@ const Page: NextPage = () => {
                 >
                   {/* top */}
                   <div className="flex w-full justify-between">
-                    <h3>{chat.name}</h3>
+                    <h3>{formatChatName(chat, user?.id || "")}</h3>
                     <DateFormat
                       className="text-xs font-light"
                       date={chat.lastMessageAt}
@@ -158,6 +167,13 @@ const Page: NextPage = () => {
           </div>
         </div>
       </div>
+      {user && (
+        <ChatModal
+          userId={user.id}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </div>
   )
 }

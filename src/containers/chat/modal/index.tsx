@@ -76,7 +76,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
     return () => {
       ignore = true
     }
-  }, [search])
+  }, [search, userId])
 
   useEffect(() => {
     window.addEventListener("keydown", (e) => {
@@ -92,7 +92,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
         }
       })
     }
-  }, [])
+  }, [onClose])
 
   if (!isOpen) return null
 

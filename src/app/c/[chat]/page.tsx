@@ -92,7 +92,7 @@ const Page: NextPage = () => {
       setChats(chats)
       setMessages(messages)
     })
-  }, [getData])
+  }, [getData, router])
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
