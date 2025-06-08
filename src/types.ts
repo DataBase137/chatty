@@ -1,6 +1,7 @@
 type Chat = {
+  isGroup: boolean
   id: string
-  name: string
+  name: string | null
   createdAt: Date
   lastMessageAt: Date
 } & {

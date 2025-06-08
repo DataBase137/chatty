@@ -20,7 +20,7 @@ made with nextjs, tailwindcss, and prisma
 | friends and dms                          | false     |
 | separate chat management                 | false     |
 | account customization and profiles       | false     |
-| mobile layout and responsive design      | false     |
+| mobile layout and responsive design      | true      |
 | dark mode and customization              | false     |
 | message functionality                    | false     |
 | file, image, and audio support           | false     |

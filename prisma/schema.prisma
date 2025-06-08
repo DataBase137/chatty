@@ -21,7 +21,8 @@ model User {
 
 model Chat {
   id            String   @id @default(cuid())
-  name          String
+  isGroup       Boolean  @default(false)
+  name          String?
   createdAt     DateTime @default(now())
   lastMessageAt DateTime @default(now())
 

@@ -76,10 +76,19 @@ export const sendMessage = async (
   }
 }
 
-export const createChat = async (id: string): Promise<Chat> => {
+export const createChat = async (
+  members: string[],
+  name?: string
+): Promise<Chat> => {
   try {
     const chat = await prisma.chat.create({
-      data: { name: "untitled chat", participants: { connect: { id } } },
+      data: {
+        participants: {
+          connect: members.map((memberId) => ({ id: memberId })),
+        },
+        name,
+        isGroup: members.length > 2,
+      },
     })
 
     return chat as Chat
@@ -139,5 +148,49 @@ export const fetchData = async (
   } catch (error) {
     console.error(error)
     return { user: {} as User, chat: null, chats: [], messages: [] }
+  }
+}
+
+// TODO replace with friends list
+export const getUsers = async (search: string): Promise<User[]> => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    })
+
+    return users as User[]
+  } catch (error) {
+    console.error(error)
+    return []
+  }
+}
+
+export const findChat = async (userIds: string[]): Promise<Chat | null> => {
+  try {
+    const chat = await prisma.chat.findFirst({
+      where: {
+        participants: {
+          every: {
+            id: {
+              in: userIds,
+            },
+          },
+        },
+      },
+    })
+
+    return chat as Chat | null
+  } catch (error) {
+    console.error(error)
+    return null
   }
 }

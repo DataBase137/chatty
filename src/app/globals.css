@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply text-dark h-screen overflow-x-hidden bg-[#f7f7f7];
+    @apply text-dark bg-light h-screen overflow-x-hidden;
   }
 
   a {

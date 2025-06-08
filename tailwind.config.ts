@@ -11,6 +11,7 @@ const config: Config = {
         plum: "#7B5EA7",
         teal: "#4DD7B0",
         dark: "#1F1F1F",
+        light: "#F7F7F7",
       },
       fontFamily: {
         sans: ["Inter", "Poppins", "sans-serif"],
