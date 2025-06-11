@@ -1,10 +1,9 @@
-import { NextPage } from "next"
 import { fetchData } from "@/actions/chat"
 import Sidebar from "@/containers/chat/sidebar"
 import Messages from "@/containers/chat/messages"
 
-const Page: NextPage<{ params: { chat: string } }> = async ({ params }) => {
-  const chat = (await params).chat
+const Page = async ({ params }: { params: { chat: string } }) => {
+  const chat = params.chat
 
   const { user, globChat, chats, messages } = await fetchData(chat)
 
