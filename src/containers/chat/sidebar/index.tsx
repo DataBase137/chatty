@@ -69,7 +69,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
         pusher.unsubscribe(channel.name)
       })
     }
-  }, [chats])
+  }, [chats, user?.id])
 
   return (
     <>

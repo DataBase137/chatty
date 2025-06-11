@@ -2,8 +2,8 @@ import { fetchData } from "@/actions/chat"
 import Sidebar from "@/containers/chat/sidebar"
 import Messages from "@/containers/chat/messages"
 
-const Page = async ({ params }: { params: { chat: string } }) => {
-  const chat = params.chat
+const Page = async (props: { params: { chat: string } }) => {
+  const chat = (await props.params).chat
 
   const { user, globChat, chats, messages } = await fetchData(chat)
 
