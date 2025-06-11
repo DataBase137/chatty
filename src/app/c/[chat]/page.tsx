@@ -1,9 +1,12 @@
 import { fetchData } from "@/actions/chat"
 import Sidebar from "@/containers/chat/sidebar"
 import Messages from "@/containers/chat/messages"
+import { headers } from "next/headers"
 
-const Page = async (props: { params: { chat: string } }) => {
-  const chat = (await props.params).chat
+const Page = async () => {
+  const headersList = await headers()
+  const pathname = headersList.get("x-pathname")
+  const chat = pathname?.slice(3)
 
   const { user, globChat, chats, messages } = await fetchData(chat)
 
