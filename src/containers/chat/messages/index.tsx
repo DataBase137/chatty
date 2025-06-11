@@ -4,7 +4,7 @@ import { sendMessage } from "@/actions/chat"
 import Message from "@/components/chat/message"
 import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import Pusher from "pusher-js"
 import { FC, useEffect, useRef, useState } from "react"
 import { FaArrowLeft, FaPaperPlane } from "react-icons/fa6"
@@ -16,7 +16,6 @@ interface MessagesProps {
 }
 
 const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
-  const router = useRouter()
   const chatRef = useRef<HTMLDivElement>(null)
   const [messages, setMessages] = useState<Message[]>(initMessages)
 
@@ -63,12 +62,12 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div className="flex w-full items-center justify-between px-4 pb-1">
-        <button
+        <Link
           className="ml-[-2rem] rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-          onClick={() => router.push("/c")}
+          href="/c"
         >
           <FaArrowLeft />
-        </button>
+        </Link>
         <h2 className="text-2xl font-semibold">
           {formatChatName(chat, user.id || "")}
         </h2>

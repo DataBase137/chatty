@@ -26,6 +26,7 @@ const setCookie = async (name: string, data: string, expires: Date) => {
   ;(await cookies()).set(name, data, {
     httpOnly: true,
     path: "/",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     expires,
   })

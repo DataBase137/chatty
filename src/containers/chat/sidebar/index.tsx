@@ -3,12 +3,12 @@
 import { logOut } from "@/actions/auth"
 import Chat from "@/components/chat/chat"
 import { User } from "@prisma/client"
-import { useRouter } from "next/navigation"
 import { FC, useEffect, useState } from "react"
 import { FaGear, FaPlus, FaRightFromBracket } from "react-icons/fa6"
 import ChatModal from "../modal"
 import { formatChatName } from "@/hooks/formatChatName"
 import Pusher from "pusher-js"
+import Link from "next/link"
 
 interface SidebarProps {
   initChats: Chat[]
@@ -18,7 +18,6 @@ interface SidebarProps {
 
 const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
   const [searchTerm, setSearchTerm] = useState<string>("")
-  const router = useRouter()
   const [chats, setChats] = useState<Chat[]>(initChats)
   const [modalOpen, setModalOpen] = useState<boolean>(false)
 
@@ -115,18 +114,20 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
             {user?.name}
           </p>
           <div className="flex items-center gap-0.5">
-            <button
+            <Link
               className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-              onClick={() => router.push("/settings")}
+              href="/settings"
             >
               <FaGear />
-            </button>
-            <button
-              className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
-              onClick={logOut}
-            >
-              <FaRightFromBracket />
-            </button>
+            </Link>
+            <form onSubmit={logOut}>
+              <button
+                className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
+                type="submit"
+              >
+                <FaRightFromBracket />
+              </button>
+            </form>
           </div>
         </div>
       </div>
