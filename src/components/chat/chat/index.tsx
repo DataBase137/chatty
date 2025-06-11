@@ -1,3 +1,6 @@
+"use client"
+
+import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
 import Link from "next/link"
 import { FC, useEffect, useState } from "react"
@@ -58,30 +61,21 @@ interface ChatProps {
 }
 
 const Chat: FC<ChatProps> = ({ chat, globChat, user }) => {
-  const formatChatName = (chat: Chat, userId: string) => {
-    if (chat.name && chat.isGroup) {
-      return chat.name
-    }
-    return chat.participants
-      .filter((participant) => participant.id !== userId)
-      .map((participant) => participant.name)
-      .join(", ")
-  }
-
   return (
     <Link
       className={`flex flex-col gap-1 rounded-2xl bg-slate-300 ${chat.id === globChat?.id ? "bg-opacity-70" : "bg-opacity-20 hover:bg-opacity-40"} px-5 py-4 transition-all`}
       href={`/c/${chat.id}`}
       key={chat.id}
     >
-      {/* top */}
       <div className="flex w-full justify-between">
         <h3 className="text-[0.95rem] font-semibold">
           {formatChatName(chat, user?.id || "")}
         </h3>
-        <DateFormat className="text-xs font-light" date={chat.lastMessageAt} />
+        <DateFormat
+          className="text-xs font-light"
+          date={new Date(chat.lastMessageAt)}
+        />
       </div>
-      {/* bottom */}
       <p className="text-nowrap text-xs text-slate-600">{`${chat.messages?.length ? `${chat.messages && chat.messages[0]?.author.name === user?.name ? "you" : chat.messages?.[0]?.author.name}: ${chat.messages[0].text.slice(0, 24)}${chat.messages[0].text.length >= 24 ? "..." : ""}` : "send a message"}`}</p>
     </Link>
   )

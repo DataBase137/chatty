@@ -3,8 +3,20 @@
 import prisma from "@/lib/db"
 import Pusher from "pusher"
 import { getUser } from "./auth"
-import { User } from "@prisma/client"
+import {
+  Chat as PrChat,
+  User,
+  FriendRequest as PrFriendRequest,
+} from "@prisma/client"
 import { getFriendRequests } from "./friends"
+
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID as string,
+  key: process.env.NEXT_PUBLIC_PUSHER_KEY as string,
+  secret: process.env.PUSHER_SECRET as string,
+  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
+  useTLS: true,
+})
 
 export const getChats = async (id: string): Promise<Chat[]> => {
   try {
@@ -49,28 +61,22 @@ export const sendMessage = async (
   authorId: string,
   text: string
 ): Promise<void> => {
+  const now = new Date()
+
   try {
-    const payload = await prisma.$transaction([
+    const payload: [Message, PrChat] = await prisma.$transaction([
       prisma.message.create({
         data: { chatId, authorId, text },
         include: { author: true },
       }),
       prisma.chat.update({
         where: { id: chatId },
-        data: { lastMessageAt: new Date() },
+        data: { lastMessageAt: now },
       }),
     ])
 
-    const pusher = new Pusher({
-      appId: process.env.PUSHER_APP_ID as string,
-      key: process.env.NEXT_PUBLIC_PUSHER_KEY as string,
-      secret: process.env.PUSHER_SECRET as string,
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
-      useTLS: true,
-    })
-
     pusher.trigger(`chat-${chatId}`, "new-message", {
-      message: `${JSON.stringify(payload[0])}\n\n`,
+      message: payload[0],
     })
   } catch (error) {
     console.error(error)
@@ -80,9 +86,9 @@ export const sendMessage = async (
 export const createChat = async (
   members: string[],
   name?: string
-): Promise<Chat> => {
+): Promise<void> => {
   try {
-    const chat = await prisma.chat.create({
+    const chat: Chat = await prisma.chat.create({
       data: {
         participants: {
           connect: members.map((memberId) => ({ id: memberId })),
@@ -90,12 +96,23 @@ export const createChat = async (
         name,
         isGroup: members.length > 2,
       },
+      include: {
+        participants: true,
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { author: { select: { name: true } } },
+        },
+      },
     })
 
-    return chat as Chat
+    chat.participants.map((user) => {
+      pusher.trigger(`user-${user.id}`, "new-chat", {
+        chat,
+      })
+    })
   } catch (error) {
     console.error(error)
-    return {} as Chat
   }
 }
 
@@ -130,7 +147,7 @@ export const fetchData = async (
   globChat: Chat | null
   chats: Chat[]
   messages: Message[]
-  friends: FriendRequest[]
+  friends: (PrFriendRequest & FriendRequest)[]
 }> => {
   try {
     const user = await getUser()
@@ -195,13 +212,33 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
             },
           },
         },
+        AND: [
+          {
+            participants: {
+              every: {
+                id: {
+                  in: userIds,
+                },
+              },
+            },
+          },
+          {
+            participants: {
+              none: {
+                id: {
+                  notIn: userIds,
+                },
+              },
+            },
+          },
+        ],
       },
       include: {
         participants: true,
       },
     })
 
-    return chat as Chat | null
+    return chat as Chat
   } catch (error) {
     console.error(error)
     return null

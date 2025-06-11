@@ -25,7 +25,7 @@ made with nextjs, tailwindcss, and prisma
 | message functionality                    | false     |
 | file, image, and audio support           | false     |
 | online and typing indicators             | false     |
-| read recipts                             | false     |
+| read receipts                            | false     |
 
 ## known bugs
 

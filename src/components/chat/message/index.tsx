@@ -3,7 +3,7 @@ import { FC } from "react"
 interface MessageProps {
   message: Message
   conditional: boolean
-  author: boolean
+  isAuthor: boolean
   chat: Chat
   nameNeeded: boolean
 }
@@ -11,35 +11,38 @@ interface MessageProps {
 const Message: FC<MessageProps> = ({
   message,
   conditional,
-  author,
+  isAuthor,
   chat,
   nameNeeded,
 }) => {
-  const formatDateDiff = (createdAt: Date) => {
+  const formatTimestamp = (createdAt: Date) => {
     const messageDate = new Date(createdAt)
-    const currentDate = new Date()
+    const now = new Date()
 
-    const messageDateWithoutTime = new Date(
-      messageDate.getFullYear(),
-      messageDate.getMonth(),
-      messageDate.getDate()
-    ).getTime()
-    const currentDateWithoutTime = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      currentDate.getDate()
-    ).getTime()
+    const isToday = messageDate.toDateString() === now.toDateString()
+    const isYesterday =
+      new Date(now.setDate(now.getDate() - 1)).toDateString() ===
+      messageDate.toDateString()
 
-    const dayDifference = Math.floor(
-      (currentDateWithoutTime - messageDateWithoutTime) / (1000 * 60 * 60 * 24)
-    )
-
-    if (dayDifference === 0) {
-      return `${messageDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "numeric" })}`
-    } else if (dayDifference === 1) {
-      return `Yesterday ${messageDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "numeric" })}`
-    } else if (dayDifference < 7) {
-      return `${messageDate.toLocaleString("en-US", { hour: "numeric", minute: "numeric", weekday: "short" })}`
+    if (isToday) {
+      return messageDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+      })
+    } else if (isYesterday) {
+      return `Yesterday ${messageDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+      })}`
+    } else if (
+      (new Date().getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24) <
+      7
+    ) {
+      return messageDate.toLocaleString("en-US", {
+        weekday: "short",
+        hour: "numeric",
+        minute: "numeric",
+      })
     } else {
       return messageDate.toLocaleString("en-US", {
         year: "numeric",
@@ -54,20 +57,28 @@ const Message: FC<MessageProps> = ({
   return (
     <>
       {conditional && (
-        <p className="flex w-full justify-center py-2 text-xs font-light opacity-80">
-          {formatDateDiff(message.createdAt)}
+        <p className="flex w-full justify-center py-2 text-xs font-light text-slate-500">
+          {formatTimestamp(message.createdAt)}
         </p>
       )}
-      {!author && (nameNeeded || conditional) && chat.isGroup && (
-        <p className="flex h-full flex-col justify-center pl-3 text-xs font-light opacity-80">
+
+      {!isAuthor && chat.isGroup && (nameNeeded || conditional) && (
+        <p className="ml-3 mt-1 text-xs font-light text-slate-500">
           {message.author.name}
         </p>
       )}
-      <div className={`${author && "justify-end"} flex w-full`}>
+
+      <div
+        className={`flex w-full ${isAuthor ? "justify-end" : "justify-start"}`}
+      >
         <div
-          className={`${author ? "bg-sunset justify-end bg-opacity-90 text-white" : "bg-slate-400 bg-opacity-20 text-opacity-70"} w-max max-w-[80%] rounded-[19px] px-[18px] py-2.5 shadow-sm`}
+          className={`max-w-[80%] rounded-[19px] px-[18px] py-2.5 text-sm shadow-sm ${
+            isAuthor
+              ? "bg-sunset text-white"
+              : "bg-slate-400 bg-opacity-20 text-opacity-70"
+          }`}
         >
-          <div className="text-sm">{message.text}</div>
+          {message.text}
         </div>
       </div>
     </>

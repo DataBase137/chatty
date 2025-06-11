@@ -1,8 +1,5 @@
-"use client"
-
 import { createChat, findChat, getUsers } from "@/actions/chat"
 import { User } from "@prisma/client"
-import { useRouter } from "next/navigation"
 import { FC, useEffect, useState } from "react"
 import { FaXmark } from "react-icons/fa6"
 
@@ -18,7 +15,6 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
   const [groupName, setGroupName] = useState("")
   const [users, setUsers] = useState<User[]>([])
   const [groupExists, setGroupExists] = useState(false)
-  const router = useRouter()
 
   const toggleUser = (id: string) => {
     setSelectedUsers((prev) =>
@@ -29,9 +25,9 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
   const handleCreateChat = async () => {
     if (!selectedUsers.length) return
 
-    const chat = await createChat(selectedUsers, groupName)
+    const updatedUsers = [...selectedUsers, userId]
 
-    router.push(`/c/${chat.id}`)
+    await createChat(updatedUsers, groupName).then(onClose)
   }
 
   useEffect(() => {
@@ -96,7 +92,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-slate-950/30" onClick={onClose}></div>
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="relative z-10 flex w-full max-w-md flex-col rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2>create a new chat</h2>
           <button onClick={onClose} className="text-dark hover:text-opacity-80">
@@ -107,9 +103,9 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
           type="text"
           placeholder="group name (optional)"
           value={groupName}
-          disabled={groupExists}
+          disabled={groupExists || selectedUsers.length < 2}
           onChange={(e) => setGroupName(e.target.value)}
-          className="focus:ring-sunset mb-3 w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-red-50"
+          className="input mb-3 disabled:cursor-not-allowed disabled:bg-red-50"
         />
 
         <input
@@ -117,7 +113,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
           placeholder="search users"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="focus:ring-sunset mb-3 w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
+          className="input mb-3"
         />
         <div className="mb-4 max-h-40 overflow-y-auto">
           {[
@@ -130,7 +126,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
           ].map((user) => (
             <label
               key={user.id}
-              className="hover:bg-sunset mb-2 flex cursor-pointer items-center rounded-lg p-2 hover:bg-opacity-10"
+              className="mb-2 flex cursor-pointer items-center rounded-lg p-2 hover:bg-sunset hover:bg-opacity-10"
             >
               <input
                 type="checkbox"
@@ -138,7 +134,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
                 onChange={() => toggleUser(user.id)}
                 className="peer hidden"
               />
-              <div className="border-sunset peer-checked:bg-sunset duration-10 mr-3 h-5 w-5 rounded-full border-2 transition-colors peer-checked:bg-opacity-90" />
+              <div className="duration-10 mr-3 h-5 w-5 rounded-full border-2 border-sunset transition-colors peer-checked:bg-sunset peer-checked:bg-opacity-90" />
               <span className="text-sm">{user.name}</span>
             </label>
           ))}
@@ -146,7 +142,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
             <button
               disabled={groupExists}
               onClick={handleCreateChat}
-              className="bg-sunset w-1/2 rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
+              className="w-1/2 rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
             >
               create chat
             </button>

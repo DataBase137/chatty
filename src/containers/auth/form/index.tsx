@@ -41,7 +41,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
             required
             minLength={2}
             ref={usernameRef}
-            className="focus:ring-sunset flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
+            className="input valid:ring-green-500 invalid:ring-red-500"
             onChange={(e) => e.target.setCustomValidity("")}
           />
         )}
@@ -52,7 +52,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
           autoComplete="username"
           required
           ref={emailRef}
-          className="focus:ring-sunset flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
+          className="input valid:ring-green-500 invalid:ring-red-500"
           onChange={(e) => e.target.setCustomValidity("")}
         />
         <input
@@ -63,11 +63,11 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
           required
           minLength={6}
           ref={passwordRef}
-          className="focus:ring-sunset flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
+          className="input valid:ring-green-500 invalid:ring-red-500"
           onChange={(e) => e.target.setCustomValidity("")}
         />
         <button
-          className="bg-sunset mt-2 rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
+          className="mt-2 rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
           type="submit"
           disabled={pending}
         >

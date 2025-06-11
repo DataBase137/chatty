@@ -4,19 +4,19 @@ import { logOut } from "@/actions/auth"
 import Chat from "@/components/chat/chat"
 import { User } from "@prisma/client"
 import { useRouter } from "next/navigation"
-import Pusher from "pusher-js"
 import { FC, useEffect, useState } from "react"
 import { FaGear, FaPlus, FaRightFromBracket } from "react-icons/fa6"
 import ChatModal from "../modal"
+import { formatChatName } from "@/hooks/formatChatName"
+import Pusher from "pusher-js"
 
 interface SidebarProps {
   initChats: Chat[]
   user: User | null
   globChat: Chat | null
-  friends: FriendRequest[]
 }
 
-const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat, friends }) => {
+const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const router = useRouter()
   const [chats, setChats] = useState<Chat[]>(initChats)
@@ -30,8 +30,8 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat, friends }) => {
     const channels = chats.map((c) => {
       const channel = pusher.subscribe(`chat-${c.id}`)
 
-      channel.bind("new-message", (data: any) => {
-        const message: Message = JSON.parse(data.message)
+      channel.bind("new-message", (data: { message: Message }) => {
+        const message = data.message
 
         setChats((chats) => {
           const chatIndex = chats.findIndex(
@@ -55,51 +55,44 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat, friends }) => {
       return channel
     })
 
+    const channel = pusher.subscribe(`user-${user?.id}`)
+
+    channel.bind("new-chat", (data: { chat: Chat }) => {
+      const chat = data.chat
+
+      !chats.includes(chat) && setChats((prev) => [chat, ...prev])
+    })
+
     return () => {
       channels.forEach((channel) => {
+        channel.unbind_all()
         pusher.unsubscribe(channel.name)
       })
     }
   }, [chats])
 
-  const formatChatName = (chat: Chat, userId: string) => {
-    if (chat.name && chat.isGroup) {
-      return chat.name
-    }
-    return chat.participants
-      .filter((participant) => participant.id !== userId)
-      .map((participant) => participant.name)
-      .join(", ")
-  }
-
   return (
     <>
-      <div className="flex h-full min-w-80 flex-col gap-3 px-4 transition-transform duration-300 ease-in-out">
-        {/* top module */}
+      <div className="flex h-full min-w-80 flex-col gap-3 px-4">
         <div className="flex flex-col gap-3 pb-2">
-          {/* very top */}
-          <div className="flex justify-between">
-            {/* header */}
+          <div className="flex items-center justify-between">
             <h1 className="pl-1">chats</h1>
-            {/* create chat button */}
             <button
-              className="bg-sunset rounded-full bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
+              className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
               onClick={() => setModalOpen(true)}
             >
               <FaPlus />
             </button>
           </div>
-          {/* search bar */}
           <input
             type="text"
             placeholder="search chats"
             autoComplete="off"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="focus:ring-sunset w-full flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2"
+            className="input"
           />
         </div>
-        {/* chat list */}
         <div className="flex h-full flex-col gap-2 overflow-y-auto">
           {chats &&
             chats
@@ -117,22 +110,19 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat, friends }) => {
                 />
               ))}
         </div>
-        {/* bottom module */}
-        <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70 transition-all">
+        <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70">
           <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
             {user?.name}
           </p>
           <div className="flex items-center gap-0.5">
-            {/* settings button */}
             <button
-              className="rounded-2xl p-2.5 text-sm hover:bg-slate-300 hover:bg-opacity-40"
+              className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
               onClick={() => router.push("/settings")}
             >
               <FaGear />
             </button>
-            {/* log out button */}
             <button
-              className="rounded-2xl p-2.5 text-sm hover:bg-slate-300 hover:bg-opacity-40"
+              className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
               onClick={logOut}
             >
               <FaRightFromBracket />

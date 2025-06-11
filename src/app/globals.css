@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply text-dark bg-light h-screen overflow-x-hidden;
+    @apply h-screen overflow-x-hidden bg-light text-dark;
   }
 
   a {
@@ -37,6 +37,10 @@
 
   p {
     @apply text-base leading-relaxed;
+  }
+
+  .input {
+    @apply flex-1 rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-5 py-3 text-sm text-opacity-70 transition-all focus:outline-none focus:ring-2 focus:ring-sunset;
   }
 }
 

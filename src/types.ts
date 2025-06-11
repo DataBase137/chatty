@@ -43,16 +43,14 @@ type Message = {
 }
 
 type FriendRequest = {
-  senderId: string
-  receiverId: string
-} & {
   sender: {
     id: string
     name: string
+    email: string
   }
-} & {
   receiver: {
     id: string
     name: string
+    email: string
   }
 }
