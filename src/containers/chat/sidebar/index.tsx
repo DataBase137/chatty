@@ -79,6 +79,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
             <button
               className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
               onClick={() => setModalOpen(true)}
+              name="create chat"
             >
               <FaPlus />
             </button>
@@ -124,6 +125,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
               <button
                 className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
                 type="submit"
+                name="log out"
               >
                 <FaRightFromBracket />
               </button>

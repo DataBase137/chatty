@@ -1,10 +1,11 @@
 "use client"
 
-import { acceptRequest, rejectRequest, sendRequest } from "@/actions/friends"
+import { sendRequest } from "@/actions/friends"
+import Friend from "@/components/chat/friend"
 import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
 import Pusher from "pusher-js"
 import { FC, useEffect, useRef, useState } from "react"
-import { FaCheck, FaPlus, FaXmark } from "react-icons/fa6"
+import { FaPlus } from "react-icons/fa6"
 
 interface FriendsProps {
   initFriends: (PrFriendRequest & FriendRequest)[]
@@ -21,30 +22,22 @@ const Friends: FC<FriendsProps> = ({ initFriends, user }) => {
 
     const formData = new FormData(e.currentTarget)
     const email = String(formData.get("email")).trim()
+    let error = false
 
     if (email) {
       if (email === user.email) {
         emailRef.current?.setCustomValidity("enter a different email")
-      } else {
-        sendRequest(user.id, email).then((payload) => {
-          if (payload.error) {
-            emailRef.current?.setCustomValidity(
-              "no user with that email exists"
-            )
-            return
-          }
-
-          e.currentTarget.reset()
-        })
+        return
       }
-    }
-  }
 
-  const handleUpdateRequest = (id: string, type: "accept" | "decline") => {
-    if (type === "accept") {
-      acceptRequest(id)
-    } else {
-      rejectRequest(id)
+      sendRequest(user.id, email).then((payload) => {
+        if (payload.error) {
+          emailRef.current?.setCustomValidity("no user with that email exists")
+          error = true
+        }
+
+        if (error === false) e.currentTarget.reset()
+      })
     }
   }
 
@@ -107,40 +100,13 @@ const Friends: FC<FriendsProps> = ({ initFriends, user }) => {
         </form>
       </div>
       <div className="flex w-2/3 flex-col gap-2 px-8">
-        {friends.map((friend) => {
-          const isSender = friend.senderId === user.id
-
-          return (
-            <div
-              key={friend.id}
-              className="flex items-center justify-between rounded-2xl bg-slate-300 bg-opacity-20 px-5 py-4 transition"
-            >
-              <p className="pl-1 font-semibold">
-                {isSender ? friend.receiver.name : friend.sender.name}
-              </p>
-              {isSender || friend.status != "PENDING" ? (
-                <p className="py-[0.5625rem] pr-2.5 text-xs font-light text-slate-600">
-                  {friend.status.toLocaleLowerCase()}
-                </p>
-              ) : (
-                <div>
-                  <button
-                    className="rounded-2xl p-2.5 text-sm transition hover:bg-green-300 hover:bg-opacity-40"
-                    onClick={() => handleUpdateRequest(friend.id, "accept")}
-                  >
-                    <FaCheck />
-                  </button>
-                  <button
-                    className="rounded-2xl p-2.5 text-base transition hover:bg-red-300 hover:bg-opacity-40"
-                    onClick={() => handleUpdateRequest(friend.id, "decline")}
-                  >
-                    <FaXmark />
-                  </button>
-                </div>
-              )}
-            </div>
-          )
-        })}
+        {friends.map((friend) => (
+          <Friend
+            isSender={friend.senderId === user.id}
+            key={friend.id}
+            friend={friend}
+          />
+        ))}
       </div>
     </div>
   )
