@@ -14,9 +14,12 @@ const pusher = new Pusher({
 })
 
 export const sendRequest = async (
-  userId: string,
-  email: string
-): Promise<{ error?: string }> => {
+  _currentState: unknown,
+  formData: FormData
+) => {
+  const email = String(formData.get("email")).trim()
+  const userId = String(formData.get("user-id"))
+
   try {
     const receiver = await prisma.user.findUnique({
       where: { email },
@@ -24,7 +27,11 @@ export const sendRequest = async (
     })
 
     if (!receiver) {
-      throw new Error("Invalid email")
+      throw new Error("invalid email")
+    }
+
+    if (receiver.id === userId) {
+      throw new Error("current user")
     }
 
     const request: PrFriendRequest & FriendRequest =
@@ -51,12 +58,12 @@ export const sendRequest = async (
         },
       })
 
-    pusher.trigger(`user-${receiver.id}`, "new-request", { request })
-    pusher.trigger(`user-${userId}`, "new-request", { request })
+    await pusher.trigger(`user-${receiver.id}`, "new-request", { request })
+    await pusher.trigger(`user-${userId}`, "new-request", { request })
 
     return {}
   } catch (error) {
-    return { error: "email" }
+    return error
   }
 }
 
@@ -89,8 +96,12 @@ export const acceptRequest = async (id: string): Promise<void> => {
         },
       })
 
-    pusher.trigger(`user-${request.senderId}`, "update-request", { request })
-    pusher.trigger(`user-${request.receiverId}`, "update-request", { request })
+    await pusher.trigger(`user-${request.senderId}`, "update-request", {
+      request,
+    })
+    await pusher.trigger(`user-${request.receiverId}`, "update-request", {
+      request,
+    })
 
     await createChat([request.senderId, request.receiverId])
   } catch (error) {
@@ -127,7 +138,12 @@ export const rejectRequest = async (id: string): Promise<void> => {
         },
       })
 
-    pusher.trigger(`user-${request.senderId}`, "update-request", { request })
+    await pusher.trigger(`user-${request.senderId}`, "update-request", {
+      request,
+    })
+    await pusher.trigger(`user-${request.receiverId}`, "update-request", {
+      request,
+    })
   } catch (error) {
     console.error(error)
   }

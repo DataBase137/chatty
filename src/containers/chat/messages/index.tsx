@@ -6,8 +6,10 @@ import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
 import Link from "next/link"
 import Pusher from "pusher-js"
-import { FC, useEffect, useRef, useState } from "react"
+import { FC, MouseEvent, useEffect, useRef, useState } from "react"
 import { FaArrowLeft, FaPaperPlane } from "react-icons/fa6"
+import Form from "next/form"
+import MessageContextMenu from "@/components/contextMenu/message"
 
 interface MessagesProps {
   chat: Chat
@@ -15,9 +17,17 @@ interface MessagesProps {
   initMessages: Message[]
 }
 
+const initContextMenu = {
+  show: false,
+  x: 0,
+  y: 0,
+}
+
 const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   const chatRef = useRef<HTMLDivElement>(null)
   const [messages, setMessages] = useState<Message[]>(initMessages)
+
+  const [contextMenu, setContextMenu] = useState(initContextMenu)
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
@@ -44,23 +54,25 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
     }
   }, [messages])
 
-  const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleContextMenu = (
+    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>
+  ) => {
     e.preventDefault()
 
-    if (user && chat) {
-      const formData = new FormData(e.currentTarget)
-      const text = String(formData.get("text")).trim()
-
-      if (text) {
-        sendMessage(chat.id, user.id, text)
-      }
-
-      e.currentTarget.reset()
-    }
+    const { pageX, pageY } = e
+    setContextMenu({ show: true, x: pageX, y: pageY })
   }
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
+      {contextMenu.show && (
+        <MessageContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          closeContextMenu={() => setContextMenu(initContextMenu)}
+        />
+      )}
+
       <div className="flex w-full items-center justify-between px-4 pb-1">
         <Link
           className="ml-[-2rem] rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
@@ -100,6 +112,7 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
 
           return (
             <Message
+              handleContextMenu={handleContextMenu}
               key={message.id}
               message={message}
               conditional={conditional}
@@ -111,10 +124,7 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
         })}
       </div>
 
-      <form
-        className="flex w-full gap-2"
-        onSubmit={(e) => handleSendMessage(e)}
-      >
+      <Form className="flex w-full gap-2" action={sendMessage}>
         <input
           placeholder={`message ${formatChatName(chat, user.id || "")}`}
           type="text"
@@ -122,13 +132,15 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
           name="text"
           autoComplete="off"
         />
+        <input hidden name="chat-id" value={chat.id} readOnly />
+        <input hidden name="user-id" value={user.id} readOnly />
         <button
           type="submit"
           className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
         >
           <FaPaperPlane />
         </button>
-      </form>
+      </Form>
     </div>
   )
 }

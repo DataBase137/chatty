@@ -22,6 +22,7 @@ const Friend: FC<FriendProps> = ({ isSender, friend }) => {
       <p className="pl-1 font-semibold">
         {isSender ? friend.receiver.name : friend.sender.name}
       </p>
+
       {isSender || friend.status != "PENDING" ? (
         <p className="py-[10px] pr-2.5 text-xs font-light text-slate-600">
           {friend.status.toLocaleLowerCase()}
@@ -34,6 +35,7 @@ const Friend: FC<FriendProps> = ({ isSender, friend }) => {
           >
             <FaCheck />
           </button>
+
           <button
             className="rounded-2xl p-2.5 text-base transition hover:bg-red-300 hover:bg-opacity-40"
             onClick={() => handleUpdateRequest(friend.id, "decline")}

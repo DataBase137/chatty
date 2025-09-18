@@ -71,11 +71,13 @@ const Chat: FC<ChatProps> = ({ chat, globChat, user }) => {
         <h3 className="text-[0.95rem] font-semibold">
           {formatChatName(chat, user?.id || "")}
         </h3>
+
         <DateFormat
           className="text-xs font-light"
           date={new Date(chat.lastMessageAt)}
         />
       </div>
+
       <p className="text-nowrap text-xs text-slate-600">{`${chat.messages?.length ? `${chat.messages && chat.messages[0]?.author.name === user?.name ? "you" : chat.messages?.[0]?.author.name}: ${chat.messages[0].text.slice(0, 24)}${chat.messages[0].text.length >= 24 ? "..." : ""}` : "send a message"}`}</p>
     </Link>
   )

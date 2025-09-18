@@ -6,6 +6,7 @@ made with nextjs, tailwindcss, and prisma
 ## features
 
 - signup, login, and delete accounts
+- send and recieve friend requests
 - create new chats with users
 - send and recieve realtime messages
 
@@ -30,7 +31,9 @@ made with nextjs, tailwindcss, and prisma
 ## known bugs
 
 - when last user in chat is deleted, chat does not get deleted
-- scrollbar overlays sent messages
+- auth and friend forms reset on error
+- when accepting friend requests, multiple chats are sent until reload
+- can't create group chats
 
 ## license
 

@@ -23,7 +23,13 @@ export const getChats = async (id: string): Promise<Chat[]> => {
     const chats: Chat[] = await prisma.chat.findMany({
       where: { participants: { some: { id } } },
       include: {
-        participants: true,
+        participants: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -56,12 +62,13 @@ export const getMessages = async (chatId: string): Promise<Message[]> => {
   }
 }
 
-export const sendMessage = async (
-  chatId: string,
-  authorId: string,
-  text: string
-): Promise<void> => {
+export const sendMessage = async (formData: FormData): Promise<void> => {
+  const text = String(formData.get("text"))
+  const authorId = String(formData.get("user-id"))
+  const chatId = String(formData.get("chat-id"))
   const now = new Date()
+
+  if (!text.trim()) return
 
   try {
     const payload: [Message, PrChat] = await prisma.$transaction([
@@ -75,7 +82,7 @@ export const sendMessage = async (
       }),
     ])
 
-    pusher.trigger(`chat-${chatId}`, "new-message", {
+    await pusher.trigger(`chat-${chatId}`, "new-message", {
       message: payload[0],
     })
   } catch (error) {
@@ -106,14 +113,27 @@ export const createChat = async (
       },
     })
 
-    chat.participants.map((user) => {
-      pusher.trigger(`user-${user.id}`, "new-chat", {
+    chat.participants.map(async (user) => {
+      await pusher.trigger(`user-${user.id}`, "new-chat", {
         chat,
       })
     })
   } catch (error) {
     console.error(error)
   }
+}
+
+export const createChatHandler = async (
+  _currentState: unknown,
+  formData: FormData
+) => {
+  const name = formData.get("name")
+  const members = String(formData.get("users"))
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean)
+
+  await createChat(members, name ? String(name) : undefined)
 }
 
 export const verifyChat = async (
@@ -234,7 +254,13 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
         ],
       },
       include: {
-        participants: true,
+        participants: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
       },
     })
 
@@ -242,5 +268,28 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
   } catch (error) {
     console.error(error)
     return null
+  }
+}
+
+const unsendMessage = async (formData: FormData): Promise<void> => {
+  const messageId = String(formData.get("message-id"))
+  const chatId = String(formData.get("chat-id"))
+
+  try {
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+    })
+
+    if (!message) return
+
+    await prisma.message.delete({
+      where: { id: messageId },
+    })
+
+    await pusher.trigger(`chat-${chatId}`, "unsend-message", {
+      messageId,
+    })
+  } catch (error) {
+    console.error(error)
   }
 }

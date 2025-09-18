@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -18,8 +17,9 @@ model User {
   sentRequests     FriendRequest[] @relation("SentRequests")
   receivedRequests FriendRequest[] @relation("ReceivedRequests")
 
-  messages Message[]
-  chats    Chat[]
+  messages  Message[]
+  chats     Chat[]
+  reactions Reaction[]
 }
 
 model Chat {
@@ -34,11 +34,12 @@ model Chat {
 }
 
 model Message {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   text      String
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
   authorId  String
   chatId    String
+  reactions Reaction[]
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
@@ -62,4 +63,16 @@ enum FriendshipStatus {
   ACCEPTED
   DECLINED
   BLOCKED
+}
+
+model Reaction {
+  id        String @id @default(cuid())
+  emoji     String
+  userId    String
+  messageId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
 }

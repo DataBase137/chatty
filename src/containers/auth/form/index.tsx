@@ -4,8 +4,9 @@ import { useFormStatus } from "react-dom"
 import { authenticate } from "@/actions/auth"
 import { FC, useActionState, useRef } from "react"
 import Link from "next/link"
+import Form from "next/form"
 
-const Form: FC<{ username?: boolean }> = ({ username }) => {
+const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
   const [state, formAction] = useActionState(authenticate, "")
   const emailRef = useRef<HTMLInputElement>(null)
   const usernameRef = useRef<HTMLInputElement>(null)
@@ -28,7 +29,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
-      <form
+      <Form
         action={formAction}
         className="h-42 flex w-80 flex-col justify-center gap-2"
       >
@@ -45,6 +46,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
             onChange={(e) => e.target.setCustomValidity("")}
           />
         )}
+
         <input
           type="email"
           name="email"
@@ -55,6 +57,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
           className="input valid:ring-green-500 invalid:ring-red-500"
           onChange={(e) => e.target.setCustomValidity("")}
         />
+
         <input
           type="password"
           name="password"
@@ -66,6 +69,7 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
           className="input valid:ring-green-500 invalid:ring-red-500"
           onChange={(e) => e.target.setCustomValidity("")}
         />
+
         <button
           className="mt-2 rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"
           type="submit"
@@ -73,7 +77,8 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
         >
           {username ? "sign up" : "log in"}
         </button>
-      </form>
+      </Form>
+
       <div>
         <p className="text-sm">
           {username ? "already have an account? " : "don't have an account? "}
@@ -89,4 +94,4 @@ const Form: FC<{ username?: boolean }> = ({ username }) => {
   )
 }
 
-export default Form
+export default AuthForm

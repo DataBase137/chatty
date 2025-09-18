@@ -1,4 +1,8 @@
-import { FC } from "react"
+"use client"
+
+import { FC, MouseEvent, useState } from "react"
+import { FaRegSmile } from "react-icons/fa"
+import { FaEllipsisVertical } from "react-icons/fa6"
 
 interface MessageProps {
   message: Message
@@ -6,6 +10,9 @@ interface MessageProps {
   isAuthor: boolean
   chat: Chat
   nameNeeded: boolean
+  handleContextMenu: (
+    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>
+  ) => void
 }
 
 const Message: FC<MessageProps> = ({
@@ -14,7 +21,10 @@ const Message: FC<MessageProps> = ({
   isAuthor,
   chat,
   nameNeeded,
+  handleContextMenu,
 }) => {
+  const [isHovered, setIsHovered] = useState<boolean>(false)
+
   const formatTimestamp = (createdAt: Date) => {
     const messageDate = new Date(createdAt)
     const now = new Date()
@@ -69,8 +79,19 @@ const Message: FC<MessageProps> = ({
       )}
 
       <div
-        className={`flex w-full ${isAuthor ? "justify-end" : "justify-start"}`}
+        className={`flex w-full ${isAuthor ? "justify-end" : "justify-start"} items-center`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onContextMenu={(e) => handleContextMenu(e)}
       >
+        {isHovered && isAuthor && (
+          <div className="pr-1">
+            <button className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40">
+              <FaEllipsisVertical className="text-xs" />
+            </button>
+          </div>
+        )}
+
         <div
           className={`max-w-[80%] rounded-[19px] px-[18px] py-2.5 text-sm shadow-sm ${
             isAuthor
@@ -80,6 +101,21 @@ const Message: FC<MessageProps> = ({
         >
           {message.text}
         </div>
+
+        {isHovered && !isAuthor && (
+          <>
+            <div className="pl-1">
+              <button className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40">
+                <FaRegSmile className="text-xs" />
+              </button>
+            </div>
+            <div className="pl-1">
+              <button className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40">
+                <FaEllipsisVertical className="text-xs" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   )

@@ -5,10 +5,12 @@ import Chat from "@/components/chat/chat"
 import { User } from "@prisma/client"
 import { FC, useEffect, useState } from "react"
 import { FaGear, FaPlus, FaRightFromBracket } from "react-icons/fa6"
-import ChatModal from "../modal"
 import { formatChatName } from "@/hooks/formatChatName"
 import Pusher from "pusher-js"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+
+const ChatModal = dynamic(() => import("../modal"))
 
 interface SidebarProps {
   initChats: Chat[]
@@ -59,7 +61,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
     channel.bind("new-chat", (data: { chat: Chat }) => {
       const chat = data.chat
 
-      !chats.includes(chat) && setChats((prev) => [chat, ...prev])
+      if (!chats.includes(chat)) setChats((prev) => [chat, ...prev])
     })
 
     return () => {
@@ -76,6 +78,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
         <div className="flex flex-col gap-3 pb-2">
           <div className="flex items-center justify-between">
             <h1 className="pl-1">chats</h1>
+
             <button
               className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
               onClick={() => setModalOpen(true)}
@@ -84,6 +87,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
               <FaPlus />
             </button>
           </div>
+
           <input
             type="text"
             placeholder="search chats"
@@ -110,10 +114,12 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
                 />
               ))}
         </div>
+
         <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70">
           <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
             {user?.name}
           </p>
+
           <div className="flex items-center gap-0.5">
             <Link
               className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
@@ -121,18 +127,18 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
             >
               <FaGear />
             </Link>
-            <form onSubmit={logOut}>
-              <button
-                className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
-                type="submit"
-                name="log out"
-              >
-                <FaRightFromBracket />
-              </button>
-            </form>
+
+            <button
+              className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
+              name="log out"
+              onClick={logOut}
+            >
+              <FaRightFromBracket />
+            </button>
           </div>
         </div>
       </div>
+
       {user && (
         <ChatModal
           userId={user.id}
