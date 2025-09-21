@@ -51,8 +51,12 @@ export const getMessages = async (chatId: string): Promise<Message[]> => {
     const messages = await prisma.message.findMany({
       where: { chatId },
       orderBy: { createdAt: "desc" },
-      include: { author: true },
-      take: 50,
+      include: {
+        author: true,
+        reactions: {
+          include: { user: { select: { name: true, id: true, email: true } } },
+        },
+      },
     })
 
     return messages.reverse() as Message[] | []
@@ -74,7 +78,14 @@ export const sendMessage = async (formData: FormData): Promise<void> => {
     const payload: [Message, PrChat] = await prisma.$transaction([
       prisma.message.create({
         data: { chatId, authorId, text },
-        include: { author: true },
+        include: {
+          author: true,
+          reactions: {
+            include: {
+              user: { select: { name: true, id: true, email: true } },
+            },
+          },
+        },
       }),
       prisma.chat.update({
         where: { id: chatId },
@@ -271,10 +282,59 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
   }
 }
 
-const unsendMessage = async (formData: FormData): Promise<void> => {
-  const messageId = String(formData.get("message-id"))
-  const chatId = String(formData.get("chat-id"))
+export const reactMessage = async (
+  messageId: string,
+  chatId: string,
+  userId: string,
+  emoji: string
+): Promise<void> => {
+  try {
+    const existingReaction = await prisma.reaction.findFirst({
+      where: { messageId, userId },
+    })
 
+    const sameReaction = await prisma.reaction.findFirst({
+      where: { messageId, userId, emoji },
+    })
+
+    if (sameReaction) {
+      await prisma.reaction.delete({
+        where: { id: sameReaction.id },
+      })
+    } else {
+      if (existingReaction) {
+        await prisma.reaction.delete({
+          where: { id: existingReaction.id },
+        })
+      }
+
+      await prisma.reaction.create({
+        data: { messageId, userId, emoji },
+      })
+    }
+
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        author: true,
+        reactions: {
+          include: { user: { select: { name: true, id: true, email: true } } },
+        },
+      },
+    })
+
+    await pusher.trigger(`chat-${chatId}`, "react-message", {
+      message,
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const unsendMessage = async (
+  messageId: string,
+  chatId: string
+): Promise<void> => {
   try {
     const message = await prisma.message.findUnique({
       where: { id: messageId },
@@ -292,4 +352,14 @@ const unsendMessage = async (formData: FormData): Promise<void> => {
   } catch (error) {
     console.error(error)
   }
+}
+
+export const unsendMessageHandler = async (
+  _currentState: unknown,
+  formData: FormData
+) => {
+  const messageId = String(formData.get("message-id"))
+  const chatId = String(formData.get("chat-id"))
+
+  await unsendMessage(messageId, chatId)
 }

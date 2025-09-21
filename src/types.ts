@@ -30,6 +30,18 @@ type Message = {
   chatId: string
   createdAt: Date
   authorId: string
+  reactions: ({
+    user: {
+      name: string
+      id: string
+      email: string
+    }
+  } & {
+    id: string
+    emoji: string
+    userId: string
+    messageId: string
+  })[]
 } & {
   author: {
     id: string
@@ -51,4 +63,17 @@ type FriendRequest = {
     name: string
     email: string
   }
+}
+
+type Reaction = {
+  user: {
+    name: string
+    id: string
+    email: string
+  }
+} & {
+  id: string
+  emoji: string
+  userId: string
+  messageId: string
 }

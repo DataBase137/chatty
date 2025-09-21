@@ -9,6 +9,7 @@ made with nextjs, tailwindcss, and prisma
 - send and recieve friend requests
 - create new chats with users
 - send and recieve realtime messages
+- unsend and react to messages
 
 ## roadmap
 
@@ -23,16 +24,16 @@ made with nextjs, tailwindcss, and prisma
 | account customization and profiles       | false     |
 | mobile layout and responsive design      | true      |
 | dark mode and customization              | false     |
-| message functionality                    | false     |
+| message functionality                    | true      |
 | file, image, and audio support           | false     |
 | online and typing indicators             | false     |
 | read receipts                            | false     |
+| new notification badges                  | false     |
 
 ## known bugs
 
-- when last user in chat is deleted, chat does not get deleted
 - auth and friend forms reset on error
-- when accepting friend requests, multiple chats are sent until reload
+- when accepting friend requests, multiple chats are sent with pusher
 - can't create group chats
 
 ## license

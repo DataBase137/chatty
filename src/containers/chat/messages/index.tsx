@@ -6,10 +6,9 @@ import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
 import Link from "next/link"
 import Pusher from "pusher-js"
-import { FC, MouseEvent, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
 import { FaArrowLeft, FaPaperPlane } from "react-icons/fa6"
 import Form from "next/form"
-import MessageContextMenu from "@/components/contextMenu/message"
 
 interface MessagesProps {
   chat: Chat
@@ -17,17 +16,9 @@ interface MessagesProps {
   initMessages: Message[]
 }
 
-const initContextMenu = {
-  show: false,
-  x: 0,
-  y: 0,
-}
-
 const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   const chatRef = useRef<HTMLDivElement>(null)
   const [messages, setMessages] = useState<Message[]>(initMessages)
-
-  const [contextMenu, setContextMenu] = useState(initContextMenu)
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
@@ -42,6 +33,20 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
       setMessages((prev) => [...prev, message])
     })
 
+    channel.bind("react-message", (data: { message: Message }) => {
+      const updatedMessage = data.message
+
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+      )
+    })
+
+    channel.bind("unsend-message", (data: { messageId: string }) => {
+      const { messageId } = data
+
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
+    })
+
     return () => {
       channel.unbind_all()
       pusher.unsubscribe(`chat-${chat.id}`)
@@ -54,25 +59,8 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
     }
   }, [messages])
 
-  const handleContextMenu = (
-    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>
-  ) => {
-    e.preventDefault()
-
-    const { pageX, pageY } = e
-    setContextMenu({ show: true, x: pageX, y: pageY })
-  }
-
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      {contextMenu.show && (
-        <MessageContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          closeContextMenu={() => setContextMenu(initContextMenu)}
-        />
-      )}
-
       <div className="flex w-full items-center justify-between px-4 pb-1">
         <Link
           className="ml-[-2rem] rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
@@ -107,16 +95,14 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
                 20 * 60 * 1000) ||
             index === 0
 
-          const isAuthor = user.id === message.authorId
           const nameNeeded = messages[index - 1]?.authorId !== message.authorId
 
           return (
             <Message
-              handleContextMenu={handleContextMenu}
               key={message.id}
               message={message}
               conditional={conditional}
-              isAuthor={isAuthor}
+              userId={user.id}
               chat={chat}
               nameNeeded={nameNeeded}
             />
