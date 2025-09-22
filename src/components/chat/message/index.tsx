@@ -14,6 +14,7 @@ interface MessageProps {
   userId: string
   chat: Chat
   nameNeeded: boolean
+  handleEditMessage: (message: Message, onClose: () => void) => void
 }
 
 const Reaction: FC<{ reactions: Reaction[]; isAuthor: boolean }> = ({
@@ -22,7 +23,7 @@ const Reaction: FC<{ reactions: Reaction[]; isAuthor: boolean }> = ({
 }) => (
   <div className="relative w-0">
     <div
-      className={`absolute ${isAuthor ? "right-[-20]" : "left-[-20]"} bottom-[-6] flex items-center rounded-xl border-[3px] border-light bg-slate-200 text-sm`}
+      className={`absolute ${isAuthor ? "right-[-20px]" : "left-[-20px]"} bottom-[-6px] flex items-center rounded-xl border-[3px] border-light bg-slate-200 text-sm`}
     >
       {reactions.map((r) => (
         <span key={r.id} className="px-1">
@@ -65,12 +66,21 @@ const ContextMenu: FC<{
   show: boolean
   x: number
   y: number
-  isAuthor: boolean
   onClose: () => void
   formAction: any
   messageId: string
   chatId: string
-}> = ({ show, x, y, isAuthor, onClose, formAction, messageId, chatId }) => {
+  handleEditMessage: () => void
+}> = ({
+  show,
+  x,
+  y,
+  onClose,
+  formAction,
+  messageId,
+  chatId,
+  handleEditMessage,
+}) => {
   const ref = useRef<HTMLDivElement>(null)
   useOnClickOutside(ref, onClose)
   if (!show) return null
@@ -80,27 +90,26 @@ const ContextMenu: FC<{
       className="absolute z-20 box-border flex w-44 flex-col gap-0.5 rounded-[0.85rem] bg-slate-100 px-2 py-2 shadow-lg"
       style={{ top: y, left: x }}
     >
-      <button className="flex items-center justify-between gap-2 text-nowrap rounded-lg px-2.5 py-1.5 hover:bg-slate-300 hover:bg-opacity-50">
+      <button
+        onClick={handleEditMessage}
+        className="flex items-center justify-between gap-2 text-nowrap rounded-lg px-2.5 py-1.5 hover:bg-slate-300 hover:bg-opacity-50"
+      >
         <p className="text-sm">edit message</p>
         <FaPen className="text-[0.75rem]" />
       </button>
-      {isAuthor && (
-        <>
-          <div className="flex w-full items-center justify-center"></div>
-          <div className="mx-1 my-1 h-[1.5] w-full rounded-2xl bg-slate-300 bg-opacity-60" />
-          <Form action={formAction} onSubmit={onClose}>
-            <input hidden name="message-id" value={messageId} readOnly />
-            <input hidden name="chat-id" value={chatId} readOnly />
-            <button
-              className="flex w-full items-center justify-between gap-2 text-nowrap rounded-lg px-2.5 py-1.5 hover:bg-red-300 hover:bg-opacity-30"
-              type="submit"
-            >
-              <p className="text-sm">unsend</p>
-              <FaUndo className="text-[0.75rem]" />
-            </button>
-          </Form>
-        </>
-      )}
+      <div className="flex w-full items-center justify-center"></div>
+      <div className="mx-1 my-1 h-[1.5px] w-full rounded-2xl bg-slate-300 bg-opacity-60" />
+      <Form action={formAction} onSubmit={onClose}>
+        <input hidden name="message-id" value={messageId} readOnly />
+        <input hidden name="chat-id" value={chatId} readOnly />
+        <button
+          className="flex w-full items-center justify-between gap-2 text-nowrap rounded-lg px-2.5 py-1.5 hover:bg-red-300 hover:bg-opacity-30"
+          type="submit"
+        >
+          <p className="text-sm">unsend</p>
+          <FaUndo className="text-[0.75rem]" />
+        </button>
+      </Form>
     </div>
   )
 }
@@ -121,36 +130,19 @@ const MessageActions: FC<{
           : undefined,
       }}
     >
-      {isAuthor ? (
-        <>
-          <button
-            onClick={onReactionMenu}
-            className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-          >
-            <FaRegSmile className="text-xs" />
-          </button>
-          <button
-            onClick={onContextMenu}
-            className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-          >
-            <FaEllipsisVertical className="text-xs" />
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            onClick={onContextMenu}
-            className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-          >
-            <FaEllipsisVertical className="text-xs" />
-          </button>
-          <button
-            onClick={onReactionMenu}
-            className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-          >
-            <FaRegSmile className="text-xs" />
-          </button>
-        </>
+      <button
+        onClick={onReactionMenu}
+        className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+      >
+        <FaRegSmile className="text-xs" />
+      </button>
+      {isAuthor && (
+        <button
+          onClick={onContextMenu}
+          className="rounded-2xl p-1.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+        >
+          <FaEllipsisVertical className="text-xs" />
+        </button>
       )}
     </div>
   ) : null
@@ -161,6 +153,7 @@ const Message: FC<MessageProps> = ({
   userId,
   chat,
   nameNeeded,
+  handleEditMessage,
 }) => {
   const [isHovered, setIsHovered] = useState<boolean>(false)
   const [reactionMenu, setReactionMenu] = useState(initContextMenu)
@@ -190,13 +183,16 @@ const Message: FC<MessageProps> = ({
 
   const handleContextMenu = () => {
     const rect = messageRef.current?.getBoundingClientRect() || new DOMRect()
-    let x = isAuthor ? rect.left - 88 : rect.right - 88
+    let x = rect.left - 88
+    let y = rect.top - 100.5
     if (x + 200 > window.innerWidth) x = window.innerWidth - 200
     if (x < 0) x = 0
+    if (y + 100.5 > window.innerHeight) y = window.innerHeight - 100.5
+    if (y < 0) y = 0
     setContextMenu({
       show: true,
       x,
-      y: rect.top - (isAuthor ? 100.5 : 55),
+      y,
     })
   }
 
@@ -253,11 +249,13 @@ const Message: FC<MessageProps> = ({
         show={contextMenu.show}
         x={contextMenu.x}
         y={contextMenu.y}
-        isAuthor={isAuthor}
         onClose={() => setContextMenu(initContextMenu)}
         formAction={formAction}
         messageId={message.id}
         chatId={chat.id}
+        handleEditMessage={() =>
+          handleEditMessage(message, () => setContextMenu(initContextMenu))
+        }
       />
 
       {conditional && (

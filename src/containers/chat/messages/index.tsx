@@ -1,6 +1,6 @@
 "use client"
 
-import { sendMessage } from "@/actions/chat"
+import { editMessage, sendMessage } from "@/actions/chat"
 import Message from "@/components/chat/message"
 import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
@@ -19,6 +19,10 @@ interface MessagesProps {
 const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   const chatRef = useRef<HTMLDivElement>(null)
   const [messages, setMessages] = useState<Message[]>(initMessages)
+  const [edit, setEdit] = useState<{ message: Message; text: string } | null>(
+    null
+  )
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
@@ -47,6 +51,14 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
     })
 
+    channel.bind("edit-message", (data: { message: Message }) => {
+      const updatedMessage = data.message
+
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+      )
+    })
+
     return () => {
       channel.unbind_all()
       pusher.unsubscribe(`chat-${chat.id}`)
@@ -54,10 +66,29 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   }, [chat])
 
   useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight
+    const chat = chatRef.current
+    if (!chat) return
+
+    const handleResize = () => {
+      chat.scrollTop = chat.scrollHeight
     }
-  }, [messages])
+
+    handleResize()
+
+    const resizeObserver = new window.ResizeObserver(handleResize)
+    resizeObserver.observe(chat)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [messages, chatRef])
+
+  const handleEditMessage = async (msg: Message, onClose: () => void) => {
+    setEdit({ message: msg, text: msg.text })
+    onClose()
+    await inputRef.current?.focus()
+    inputRef.current?.setSelectionRange(msg.text.length, msg.text.length)
+  }
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
@@ -105,27 +136,83 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
               userId={user.id}
               chat={chat}
               nameNeeded={nameNeeded}
+              handleEditMessage={handleEditMessage}
             />
           )
         })}
       </div>
 
-      <Form className="flex w-full gap-2" action={sendMessage}>
-        <input
-          placeholder={`message ${formatChatName(chat, user.id || "")}`}
-          type="text"
-          className="input"
-          name="text"
-          autoComplete="off"
-        />
-        <input hidden name="chat-id" value={chat.id} readOnly />
-        <input hidden name="user-id" value={user.id} readOnly />
-        <button
-          type="submit"
-          className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
-        >
-          <FaPaperPlane />
-        </button>
+      <Form
+        className="flex w-full flex-col"
+        action={
+          edit
+            ? (e) => {
+                editMessage(e)
+                setEdit(null)
+              }
+            : sendMessage
+        }
+      >
+        {edit && (
+          <div className="relative h-8">
+            <label
+              htmlFor="message-input"
+              className="absolute w-11/12 rounded-3xl bg-sunset px-5 pb-[48px] pt-2 text-white"
+            >
+              <h4 className="text-sm">editing message</h4>
+            </label>
+          </div>
+        )}
+        <div className="flex w-full gap-2">
+          <div className="z-10 w-full rounded-full bg-light">
+            <input
+              placeholder={
+                edit
+                  ? "type to edit message"
+                  : `message ${formatChatName(chat, user.id || "")}`
+              }
+              type="text"
+              className="input w-full bg-slate-300 bg-opacity-20"
+              name="text"
+              autoComplete="off"
+              defaultValue={edit?.text || ""}
+              onChange={(e) =>
+                edit && setEdit({ ...edit, text: e.target.value })
+              }
+              onFocus={() => {
+                const handleKeyDown = (e: KeyboardEvent) => {
+                  if (e.key === "Escape") {
+                    setEdit(null)
+                    inputRef.current?.blur()
+                  }
+                }
+
+                window.addEventListener("keydown", handleKeyDown)
+                return () => {
+                  window.removeEventListener("keydown", handleKeyDown)
+                }
+              }}
+              onBlur={() => edit && setEdit(null)}
+              ref={inputRef}
+            />
+          </div>
+          {edit && (
+            <input
+              type="hidden"
+              name="message-id"
+              value={edit.message.id}
+              readOnly
+            />
+          )}
+          <input hidden name="chat-id" value={chat.id} readOnly />
+          <input hidden name="user-id" value={user.id} readOnly />
+          <button
+            type="submit"
+            className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
+          >
+            <FaPaperPlane />
+          </button>
+        </div>
       </Form>
     </div>
   )

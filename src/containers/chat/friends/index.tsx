@@ -6,15 +6,17 @@ import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
 import Pusher from "pusher-js"
 import { FC, useActionState, useEffect, useRef, useState } from "react"
 import { useFormStatus } from "react-dom"
-import { FaPlus } from "react-icons/fa6"
+import { FaArrowLeft, FaPlus } from "react-icons/fa6"
 import Form from "next/form"
+import Link from "next/link"
 
 interface FriendsProps {
   initFriends: (PrFriendRequest & FriendRequest)[]
   user: User
+  dedicated?: boolean
 }
 
-const Friends: FC<FriendsProps> = ({ initFriends, user }) => {
+const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
   const [friends, setFriends] =
     useState<(PrFriendRequest & FriendRequest)[]>(initFriends)
   const [state, formAction] = useActionState(sendRequest, "")
@@ -67,9 +69,26 @@ const Friends: FC<FriendsProps> = ({ initFriends, user }) => {
 
   return (
     <div className="flex w-full flex-col items-center gap-4 px-4">
-      <h1>friends</h1>
+      <div
+        className={`flex w-full items-center ${dedicated ? "justify-between" : "justify-center"} px-4`}
+      >
+        {dedicated ? (
+          <>
+            <Link
+              className="ml-[-2rem] rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+              href="/c"
+            >
+              <FaArrowLeft />
+            </Link>
+            <h2 className="text-2xl font-semibold">friends</h2>
+            <div />
+          </>
+        ) : (
+          <h2 className="text-2xl font-semibold">friends</h2>
+        )}
+      </div>
 
-      <div className="w-2/3 px-8 py-2">
+      <div className="w-5/6 py-2">
         <Form action={formAction} className="flex gap-2">
           <input
             placeholder="add friend"
@@ -94,7 +113,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user }) => {
         </Form>
       </div>
 
-      <div className="flex w-2/3 flex-col gap-2 px-8">
+      <div className="flex w-5/6 max-w-[500px] flex-col gap-2 overflow-y-scroll">
         {friends.map((friend) => (
           <Friend
             isSender={friend.senderId === user.id}

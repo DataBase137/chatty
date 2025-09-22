@@ -15,9 +15,11 @@ const Page = async () => {
 
   return (
     <div className="flex h-full gap-8 p-6">
-      <Suspense fallback={<SidebarSkeleton />}>
-        <Sidebar initChats={chats} user={user} globChat={globChat} />
-      </Suspense>
+      <div className="hidden min-w-80 md:flex">
+        <Suspense fallback={<SidebarSkeleton />}>
+          <Sidebar initChats={chats} user={user} globChat={globChat} />
+        </Suspense>
+      </div>
       <Suspense fallback={<MessagesSkeleton />}>
         {user && globChat && (
           <Messages chat={globChat} user={user} initMessages={messages} />

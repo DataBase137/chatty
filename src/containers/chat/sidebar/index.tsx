@@ -4,7 +4,7 @@ import { logOut } from "@/actions/auth"
 import Chat from "@/components/chat/chat"
 import { User } from "@prisma/client"
 import { FC, useEffect, useState } from "react"
-import { FaGear, FaPlus, FaRightFromBracket } from "react-icons/fa6"
+import { FaGear, FaPlus, FaRightFromBracket, FaUserPlus } from "react-icons/fa6"
 import { formatChatName } from "@/hooks/formatChatName"
 import Pusher from "pusher-js"
 import Link from "next/link"
@@ -121,6 +121,12 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
           </p>
 
           <div className="flex items-center gap-0.5">
+            <Link
+              className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+              href="/friends"
+            >
+              <FaUserPlus />
+            </Link>
             <Link
               className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
               href="/settings"

@@ -363,3 +363,32 @@ export const unsendMessageHandler = async (
 
   await unsendMessage(messageId, chatId)
 }
+
+export const editMessage = async (formData: FormData): Promise<void> => {
+  const text = String(formData.get("text"))
+  const messageId = String(formData.get("message-id"))
+  const chatId = String(formData.get("chat-id"))
+
+  if (!text.trim()) return
+
+  try {
+    const message: Message = await prisma.message.update({
+      where: { id: messageId },
+      data: { text },
+      include: {
+        author: true,
+        reactions: {
+          include: {
+            user: { select: { name: true, id: true, email: true } },
+          },
+        },
+      },
+    })
+
+    await pusher.trigger(`chat-${chatId}`, "edit-message", {
+      message,
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}

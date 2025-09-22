@@ -11,16 +11,14 @@ const Page: NextPage = async () => {
 
   return (
     <div className="flex h-full p-6">
-      <div className="w-full min-w-80 md:w-80">
+      <div className="hidden min-w-80 md:flex">
         <Suspense fallback={<SidebarSkeleton />}>
           <Sidebar initChats={chats} user={user} globChat={null} />
         </Suspense>
       </div>
-      <div className="hidden w-full md:flex">
-        <Suspense fallback={<FriendsSkeleton />}>
-          <Friends initFriends={friends} user={user} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<FriendsSkeleton />}>
+        <Friends initFriends={friends} user={user} dedicated />
+      </Suspense>
     </div>
   )
 }
