@@ -56,6 +56,11 @@ export const getMessages = async (chatId: string): Promise<Message[]> => {
         reactions: {
           include: { user: { select: { name: true, id: true, email: true } } },
         },
+        parent: {
+          include: {
+            author: { select: { id: true, name: true, email: true } },
+          },
+        },
       },
     })
 
@@ -70,19 +75,30 @@ export const sendMessage = async (formData: FormData): Promise<void> => {
   const text = String(formData.get("text"))
   const authorId = String(formData.get("user-id"))
   const chatId = String(formData.get("chat-id"))
+  const parentId = formData.get("reply-id") as string | null
   const now = new Date()
 
-  if (!text.trim()) return
+  if (text.trim() === "") return
 
   try {
-    const payload: [Message, PrChat] = await prisma.$transaction([
+    const payload = (await prisma.$transaction([
       prisma.message.create({
-        data: { chatId, authorId, text },
+        data: {
+          chatId,
+          authorId,
+          text,
+          parentId: parentId || null,
+        },
         include: {
           author: true,
           reactions: {
             include: {
               user: { select: { name: true, id: true, email: true } },
+            },
+          },
+          parent: {
+            include: {
+              author: { select: { id: true, name: true, email: true } },
             },
           },
         },
@@ -91,7 +107,7 @@ export const sendMessage = async (formData: FormData): Promise<void> => {
         where: { id: chatId },
         data: { lastMessageAt: now },
       }),
-    ])
+    ])) as [Message, PrChat]
 
     await pusher.trigger(`chat-${chatId}`, "new-message", {
       message: payload[0],
@@ -209,60 +225,15 @@ export const fetchData = async (
   }
 }
 
-// TODO replace with friends list
-export const getUsers = async (search: string): Promise<User[]> => {
+export const findChat = async (userIds: string[]): Promise<boolean | null> => {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        name: {
-          contains: search,
-          mode: "insensitive",
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    })
-
-    return users as User[]
-  } catch (error) {
-    console.error(error)
-    return []
-  }
-}
-
-export const findChat = async (userIds: string[]): Promise<Chat | null> => {
-  try {
-    const chat = await prisma.chat.findFirst({
+    const chats = await prisma.chat.findMany({
       where: {
         participants: {
           every: {
-            id: {
-              in: userIds,
-            },
+            id: { in: userIds },
           },
         },
-        AND: [
-          {
-            participants: {
-              every: {
-                id: {
-                  in: userIds,
-                },
-              },
-            },
-          },
-          {
-            participants: {
-              none: {
-                id: {
-                  notIn: userIds,
-                },
-              },
-            },
-          },
-        ],
       },
       include: {
         participants: {
@@ -275,7 +246,9 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
       },
     })
 
-    return chat as Chat
+    chats.filter((c) => c.participants.length === userIds.length)
+
+    return chats.length > 0
   } catch (error) {
     console.error(error)
     return null
@@ -319,6 +292,11 @@ export const reactMessage = async (
         author: true,
         reactions: {
           include: { user: { select: { name: true, id: true, email: true } } },
+        },
+        parent: {
+          include: {
+            author: { select: { id: true, name: true, email: true } },
+          },
         },
       },
     })

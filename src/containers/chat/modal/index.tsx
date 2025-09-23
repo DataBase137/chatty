@@ -1,4 +1,5 @@
-import { createChatHandler, findChat, getUsers } from "@/actions/chat"
+import { createChatHandler, findChat } from "@/actions/chat"
+import { getFriends } from "@/actions/friends"
 import { User } from "@prisma/client"
 import { FC, useActionState, useEffect, useState } from "react"
 import { useFormStatus } from "react-dom"
@@ -34,8 +35,8 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
 
     const updatedUsers = [...selectedUsers, userId]
 
-    findChat(updatedUsers).then((chat) => {
-      setGroupExists(!!chat)
+    findChat(updatedUsers).then((bool) => {
+      setGroupExists(!!bool)
     })
   }, [selectedUsers, userId])
 
@@ -50,7 +51,7 @@ const ChatModal: FC<PageProps> = ({ userId, isOpen, onClose }) => {
   useEffect(() => {
     let ignore = false
 
-    getUsers(search).then((users) => {
+    getFriends(userId, search).then((users) => {
       if (ignore) return
       users.map((user) => {
         if (user.id != userId) {

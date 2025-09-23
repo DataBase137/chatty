@@ -9,7 +9,7 @@ made with nextjs, tailwindcss, and prisma
 - send and recieve friend requests
 - create new chats with users
 - send and recieve realtime messages
-- edit, unsend, and react to messages
+- edit, unsend, and react, and reply to messages
 
 ## roadmap
 
@@ -33,7 +33,7 @@ made with nextjs, tailwindcss, and prisma
 ## known bugs
 
 - auth and friend forms reset on error
-- can't create group chats
+- reactions go off the message and don't show who reacted
 
 ## license
 

@@ -22,6 +22,7 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   const [edit, setEdit] = useState<{ message: Message; text: string } | null>(
     null
   )
+  const [reply, setReply] = useState<Message | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -90,6 +91,11 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
     inputRef.current?.setSelectionRange(msg.text.length, msg.text.length)
   }
 
+  const handleReply = (message: Message) => {
+    setReply(message)
+    inputRef.current?.focus()
+  }
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div className="flex w-full items-center justify-between px-4 pb-1">
@@ -137,6 +143,7 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
               chat={chat}
               nameNeeded={nameNeeded}
               handleEditMessage={handleEditMessage}
+              handleReply={handleReply}
             />
           )
         })}
@@ -150,7 +157,10 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
                 editMessage(e)
                 setEdit(null)
               }
-            : sendMessage
+            : (e) => {
+                sendMessage(e)
+                setReply(null)
+              }
         }
       >
         {edit && (
@@ -163,13 +173,26 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
             </label>
           </div>
         )}
+        {reply && (
+          <div className="relative h-8">
+            <label
+              htmlFor="message-input"
+              className="absolute w-11/12 rounded-3xl bg-sunset px-5 pb-[48px] pt-2 text-white"
+            >
+              <h4 className="text-sm">
+                replying to{" "}
+                {reply.authorId === user.id ? "yourself" : reply.author.name}
+              </h4>
+            </label>
+          </div>
+        )}
         <div className="flex w-full gap-2">
           <div className="z-10 w-full rounded-full bg-light">
             <input
               placeholder={
                 edit
                   ? "type to edit message"
-                  : `message ${formatChatName(chat, user.id || "")}`
+                  : `message ${formatChatName(chat, user.id)}`
               }
               type="text"
               className="input w-full bg-slate-300 bg-opacity-20"
@@ -192,7 +215,10 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
                   window.removeEventListener("keydown", handleKeyDown)
                 }
               }}
-              onBlur={() => edit && setEdit(null)}
+              onBlur={() => {
+                edit && setEdit(null)
+                reply && setReply(null)
+              }}
               ref={inputRef}
             />
           </div>
@@ -203,6 +229,9 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
               value={edit.message.id}
               readOnly
             />
+          )}
+          {reply && (
+            <input type="hidden" name="reply-id" value={reply?.id} readOnly />
           )}
           <input hidden name="chat-id" value={chat.id} readOnly />
           <input hidden name="user-id" value={user.id} readOnly />

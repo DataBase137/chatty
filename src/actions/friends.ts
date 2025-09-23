@@ -1,7 +1,7 @@
 "use server"
 
 import prisma from "@/lib/db"
-import { FriendRequest as PrFriendRequest } from "@prisma/client"
+import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
 import Pusher from "pusher"
 import { createChat } from "./chat"
 
@@ -196,6 +196,47 @@ export const getFriendRequests = async (
       })
 
     return requests
+  } catch (error) {
+    console.error(error)
+    return []
+  }
+}
+
+export const getFriends = async (
+  userId: string,
+  search: string
+): Promise<User[]> => {
+  try {
+    const requests: (PrFriendRequest & FriendRequest)[] =
+      await prisma.friendRequest.findMany({
+        where: {
+          OR: [{ senderId: userId }, { receiverId: userId }],
+          status: "ACCEPTED",
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          receiver: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+
+    const friends = requests
+      .map((req) => (req.senderId === userId ? req.receiver : req.sender))
+      .filter((user) => user.name.toLowerCase().includes(search.toLowerCase()))
+
+    return friends as User[]
   } catch (error) {
     console.error(error)
     return []

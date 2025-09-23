@@ -30,6 +30,9 @@ type Message = {
   chatId: string
   createdAt: Date
   authorId: string
+  parentId?: string | null
+  parent?: Message | null
+  replies?: Message[]
   reactions: ({
     user: {
       name: string

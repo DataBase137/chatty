@@ -41,6 +41,10 @@ model Message {
   chatId    String
   reactions Reaction[]
 
+  parentId String?
+  parent   Message?  @relation("MessageReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Message[] @relation("MessageReplies")
+
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
