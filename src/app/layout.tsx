@@ -2,8 +2,6 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { Poppins } from "next/font/google"
 import { Inter } from "next/font/google"
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "chatty",
@@ -22,8 +20,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${poppins.className} ${inter.className}`}>
         {children}
-        <SpeedInsights />
-        <Analytics />
       </body>
     </html>
   )
