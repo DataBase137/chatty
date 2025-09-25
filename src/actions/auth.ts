@@ -166,3 +166,107 @@ export const deleteUser = async () => {
 
   await logOut()
 }
+
+export const changeEmail = async (formData: FormData) => {
+  const user = await getUser()
+  const email = formData.get("email") as string
+
+  try {
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        email,
+      },
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const changePassword = async (formData: FormData) => {
+  const user = await getUser()
+  const password = formData.get("current-password") as string
+  const newPassword = formData.get("new-password") as string
+
+  try {
+    const passwordMatch = await bcrypt.compare(password, user.password)
+
+    if (!passwordMatch) throw new Error("Invalid password")
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const updateAccount = async (_: unknown, formData: FormData) => {
+  const user = await getUser()
+  const results: {
+    field: "name" | "email" | "password"
+    status: "success" | "error"
+    message: string
+  }[] = []
+
+  try {
+    const name = formData.get("name") as string
+    const email = formData.get("email") as string
+    const currentPassword = formData.get("current-password") as string
+    const newPassword = formData.get("new-password") as string
+
+    if (name && name !== user.name) {
+      await prisma.user.update({ where: { id: user.id }, data: { name } })
+      results.push({
+        field: "name",
+        status: "success",
+        message: "username updated",
+      })
+    }
+
+    if (email && email !== user.email) {
+      await prisma.user.update({ where: { id: user.id }, data: { email } })
+      results.push({
+        field: "email",
+        status: "success",
+        message: "email updated",
+      })
+    }
+
+    if (currentPassword && newPassword) {
+      const valid = await bcrypt.compare(currentPassword, user.password)
+      if (!valid) {
+        results.push({
+          field: "password",
+          status: "error",
+          message: "current password is incorrect",
+        })
+      } else {
+        const hashed = await bcrypt.hash(newPassword, 10)
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashed },
+        })
+        results.push({
+          field: "password",
+          status: "success",
+          message: "password updated",
+        })
+      }
+    }
+  } catch (error) {
+    console.error(error)
+    results.push({ field: "name", status: "error", message: "update failed" })
+  }
+
+  return results
+}

@@ -2,73 +2,104 @@
 
 import { useFormStatus } from "react-dom"
 import { authenticate } from "@/actions/auth"
-import { FC, useActionState, useRef } from "react"
+import { FC, useActionState, useState, useEffect } from "react"
 import Link from "next/link"
 import Form from "next/form"
 
 const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
   const [state, formAction] = useActionState(authenticate, "")
-  const emailRef = useRef<HTMLInputElement>(null)
-  const usernameRef = useRef<HTMLInputElement>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
   const { pending } = useFormStatus()
 
-  switch (state) {
-    case "name":
-      usernameRef.current?.setCustomValidity("username already exists")
-      break
-    case "email":
-      emailRef.current?.setCustomValidity("email already exists")
-      break
-    case "password":
-      passwordRef.current?.setCustomValidity("incorrect password")
-      break
-    default:
-      break
-  }
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const [nameError, setNameError] = useState("")
+  const [emailError, setEmailError] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
+  useEffect(() => {
+    setNameError("")
+    setEmailError("")
+    setPasswordError("")
+
+    switch (state) {
+      case "email":
+        if (username) setEmailError("email already exists")
+        else setEmailError("incorrect email")
+        break
+      case "password":
+        setPasswordError("incorrect password")
+        break
+    }
+  }, [state, username])
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
       <Form
         action={formAction}
-        className="h-42 flex w-80 flex-col justify-center gap-2"
+        className="h-42 flex w-80 flex-col justify-center"
       >
-        {username && (
+        <div className="flex flex-col gap-2">
+          {username && (
+            <div className="flex flex-col">
+              <input
+                type="text"
+                name="name"
+                placeholder="username"
+                autoComplete="off"
+                required
+                minLength={2}
+                className={`input ${
+                  nameError ? "ring-red-500" : "valid:ring-green-500"
+                }`}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setNameError("")
+                }}
+              />
+              {nameError && <p className="text-xs text-red-600">{nameError}</p>}
+            </div>
+          )}
+
           <input
-            type="text"
-            name="name"
-            placeholder="username"
-            autoComplete="off"
+            type="email"
+            name="email"
+            placeholder="email"
+            autoComplete="username"
             required
-            minLength={2}
-            ref={usernameRef}
-            className="input valid:ring-green-500 invalid:ring-red-500"
-            onChange={(e) => e.target.setCustomValidity("")}
+            className={`input ${
+              emailError ? "ring-red-500" : "valid:ring-green-500"
+            }`}
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setEmailError("")
+            }}
           />
-        )}
 
-        <input
-          type="email"
-          name="email"
-          placeholder="email"
-          autoComplete="username"
-          required
-          ref={emailRef}
-          className="input valid:ring-green-500 invalid:ring-red-500"
-          onChange={(e) => e.target.setCustomValidity("")}
-        />
+          <input
+            type="password"
+            name="password"
+            placeholder="password"
+            autoComplete={username ? "new-password" : "current-password"}
+            required
+            minLength={6}
+            className={`input ${
+              passwordError ? "ring-red-500" : "valid:ring-green-500"
+            }`}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              setPasswordError("")
+            }}
+          />
+        </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="password"
-          autoComplete={username ? "new-password" : "current-password"}
-          required
-          minLength={6}
-          ref={passwordRef}
-          className="input valid:ring-green-500 invalid:ring-red-500"
-          onChange={(e) => e.target.setCustomValidity("")}
-        />
+        <p className="h-5 pl-2 pt-1 text-xs text-red-600">
+          {emailError || passwordError}
+        </p>
 
         <button
           className="mt-2 rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70 disabled:cursor-pointer disabled:bg-opacity-50"

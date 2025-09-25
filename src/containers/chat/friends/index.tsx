@@ -17,42 +17,54 @@ interface FriendsProps {
 }
 
 const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
-  const [friends, setFriends] =
-    useState<(PrFriendRequest & FriendRequest)[]>(initFriends)
+  const [friends, setFriends] = useState(initFriends)
   const [state, formAction] = useActionState(sendRequest, "")
   const emailRef = useRef<HTMLInputElement>(null)
+  const [value, setValue] = useState("")
+  const [error, setError] = useState("")
   const { pending } = useFormStatus()
   const { subscribe } = usePusher()
 
-  switch (state) {
-    case "invalid email":
-      emailRef.current?.setCustomValidity("no user with that email exists")
-      break
-    case "current user":
-      emailRef.current?.setCustomValidity("enter a different email")
-      break
-  }
+  // handle server state changes
+  useEffect(() => {
+    if (state === "invalid email") {
+      setError("no user with that email exists")
+    } else if (state === "current user") {
+      setError("enter a different email")
+    } else if (state === "success") {
+      setError("")
+      setValue("") // reset input
+    } else if (state === "unexpected error") {
+      setError("something went wrong")
+    }
+
+    // auto-dismiss after 3 seconds
+    if (state && state !== "success") {
+      const timer = setTimeout(() => setError(""), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [state])
 
   useEffect(() => {
     subscribe(
       `user-${user.id}`,
       "new-request",
-      (data: { request: PrFriendRequest & FriendRequest }) => {
-        const request = data.request
-
-        setFriends((prev) => [request, ...prev])
+      (data: {
+        request: PrFriendRequest & { sender: User; receiver: User }
+      }) => {
+        setFriends((prev) => [data.request, ...prev])
       }
     )
 
     subscribe(
       `user-${user.id}`,
       "update-request",
-      (data: { request: PrFriendRequest & FriendRequest }) => {
-        const request = data.request
-
+      (data: {
+        request: PrFriendRequest & { sender: User; receiver: User }
+      }) => {
         setFriends((prev) =>
           prev.map((f) =>
-            f.id === request.id ? { ...f, status: request.status } : f
+            f.id === data.request.id ? { ...f, status: data.request.status } : f
           )
         )
       }
@@ -62,7 +74,9 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
   return (
     <div className="flex w-full flex-col items-center gap-4 px-4">
       <div
-        className={`flex w-full items-center ${dedicated ? "justify-between" : "justify-center"} px-4`}
+        className={`flex w-full items-center ${
+          dedicated ? "justify-between" : "justify-center"
+        } px-4`}
       >
         {dedicated ? (
           <>
@@ -86,11 +100,16 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
             placeholder="add friend"
             type="email"
             name="email"
-            className="input valid:ring-green-500 invalid:ring-red-500"
+            value={value}
+            className={`input ${error ? "ring-red-500" : "valid:ring-green-500"}`}
             required
             ref={emailRef}
             autoComplete="off"
-            onChange={(e) => e.currentTarget.setCustomValidity("")}
+            onChange={(e) => {
+              e.currentTarget.setCustomValidity("")
+              setValue(e.target.value)
+              setError("") // clear error while typing
+            }}
           />
 
           <input hidden readOnly name="user-id" value={user.id} />
@@ -103,6 +122,8 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
             <FaPlus />
           </button>
         </Form>
+
+        <p className="h-5 pl-3 pt-1 text-xs text-red-600">{error}</p>
       </div>
 
       <div className="flex w-5/6 max-w-[500px] flex-col gap-2 overflow-y-scroll">

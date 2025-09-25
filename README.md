@@ -10,6 +10,7 @@ made with nextjs, tailwindcss, prisma, and pusher
 - create new chats with users
 - send and recieve realtime messages
 - edit, unsend, and react, and reply to messages
+- change account details and delete accounts
 
 ## roadmap
 
@@ -32,7 +33,6 @@ made with nextjs, tailwindcss, prisma, and pusher
 
 ## known bugs
 
-- auth and friend forms reset on error
 - reactions don't show who reacted
 
 ## license

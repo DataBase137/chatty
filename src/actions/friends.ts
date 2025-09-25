@@ -18,8 +18,8 @@ export const sendRequest = async (
   _currentState: unknown,
   formData: FormData
 ) => {
-  const email = String(formData.get("email")).trim()
-  const userId = String(formData.get("user-id"))
+  const email = String(formData.get("email") || "").trim()
+  const userId = String(formData.get("user-id") || "")
 
   try {
     const receiver = await prisma.user.findUnique({
@@ -28,11 +28,11 @@ export const sendRequest = async (
     })
 
     if (!receiver) {
-      throw new Error("invalid email")
+      return "invalid email"
     }
 
     if (receiver.id === userId) {
-      throw new Error("current user")
+      return "current user"
     }
 
     const request: PrFriendRequest & FriendRequest =
@@ -62,9 +62,10 @@ export const sendRequest = async (
     await pusher.trigger(`user-${receiver.id}`, "new-request", { request })
     await pusher.trigger(`user-${userId}`, "new-request", { request })
 
-    return {}
-  } catch (error) {
-    return error
+    return "success"
+  } catch (err) {
+    console.error(err)
+    return "unexpected error"
   }
 }
 
