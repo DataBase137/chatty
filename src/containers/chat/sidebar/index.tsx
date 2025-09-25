@@ -8,20 +8,43 @@ import { FaGear, FaPlus, FaRightFromBracket, FaUserPlus } from "react-icons/fa6"
 import { formatChatName } from "@/hooks/formatChatName"
 import Pusher from "pusher-js"
 import Link from "next/link"
-import dynamic from "next/dynamic"
-
-const ChatModal = dynamic(() => import("../modal"))
+import { usePathname } from "next/navigation"
 
 interface SidebarProps {
   initChats: Chat[]
-  user: User | null
-  globChat: Chat | null
+  user: User
 }
 
-const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
+const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [chats, setChats] = useState<Chat[]>(initChats)
-  const [modalOpen, setModalOpen] = useState<boolean>(false)
+  const pathname = usePathname()
+  const chatId = pathname.slice(3)
+
+  useEffect(() => {
+    setChats((prevChats) => prevChats.filter((chat) => chat.id !== "new"))
+
+    if (pathname === "/c/new") {
+      setChats((prev) => [
+        {
+          isGroup: true,
+          id: "new",
+          name: "new message",
+          createdAt: new Date(),
+          lastMessageAt: new Date(),
+          messages: [],
+          participants: [
+            {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            },
+          ],
+        },
+        ...prev,
+      ])
+    }
+  }, [pathname, user])
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
@@ -56,7 +79,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
       return channel
     })
 
-    const channel = pusher.subscribe(`user-${user?.id}`)
+    const channel = pusher.subscribe(`user-${user.id}`)
 
     channel.bind("new-chat", (data: { chat: Chat }) => {
       const chat = data.chat
@@ -70,89 +93,73 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user, globChat }) => {
         pusher.unsubscribe(channel.name)
       })
     }
-  }, [chats, user?.id])
+  }, [chats, user.id])
 
   return (
-    <>
-      <div className="flex h-full min-w-80 flex-col gap-3 px-4">
-        <div className="flex flex-col gap-3 pb-2">
-          <div className="flex items-center justify-between">
-            <h1 className="pl-1">chats</h1>
+    <div className="flex h-full min-w-80 flex-col gap-3 px-4">
+      <div className="flex flex-col gap-3 pb-2">
+        <div className="flex items-center justify-between">
+          <h1 className="pl-1">chats</h1>
 
-            <button
-              className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
-              onClick={() => setModalOpen(true)}
-              name="create chat"
-            >
-              <FaPlus />
-            </button>
-          </div>
-
-          <input
-            type="text"
-            placeholder="search chats"
-            autoComplete="off"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input"
-          />
-        </div>
-        <div className="flex h-full flex-col gap-2 overflow-y-auto">
-          {chats &&
-            chats
-              .filter((chat) =>
-                formatChatName(chat, user?.id || "")
-                  .toLowerCase()
-                  .includes(searchTerm.toLowerCase())
-              )
-              .map((chat) => (
-                <Chat
-                  key={chat.id}
-                  chat={chat}
-                  globChat={globChat}
-                  user={user}
-                />
-              ))}
+          <Link
+            className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
+            href="/c/new"
+          >
+            <FaPlus />
+          </Link>
         </div>
 
-        <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70">
-          <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
-            {user?.name}
-          </p>
-
-          <div className="flex items-center gap-0.5">
-            <Link
-              className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-              href="/friends"
-            >
-              <FaUserPlus />
-            </Link>
-            <Link
-              className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-              href="/settings"
-            >
-              <FaGear />
-            </Link>
-
-            <button
-              className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
-              name="log out"
-              onClick={logOut}
-            >
-              <FaRightFromBracket />
-            </button>
-          </div>
-        </div>
+        <input
+          type="text"
+          placeholder="search chats"
+          autoComplete="off"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="input"
+        />
+      </div>
+      <div className="flex h-full flex-col gap-2 overflow-y-auto">
+        {chats &&
+          chats
+            .filter((chat) =>
+              formatChatName(chat, user.id || "")
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase())
+            )
+            .map((chat) => (
+              <Chat key={chat.id} chat={chat} globChatId={chatId} user={user} />
+            ))}
       </div>
 
-      {user && (
-        <ChatModal
-          userId={user.id}
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
-    </>
+      <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70">
+        <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
+          {user.name}
+        </p>
+
+        <div className="flex items-center gap-0.5">
+          <Link
+            className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+            href="/friends"
+          >
+            <FaUserPlus />
+          </Link>
+          <Link
+            className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+            href="/settings"
+          >
+            <FaGear />
+          </Link>
+
+          <button
+            className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
+            name="log out"
+            onClick={logOut}
+          >
+            <FaRightFromBracket />
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 

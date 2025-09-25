@@ -20,7 +20,7 @@ export const MessagesSkeleton = () => {
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div className="flex w-full items-center justify-between px-4 pb-1">
-        <Skeleton className="ml-[-2rem] h-[34px] w-[34px] rounded-2xl" />
+        <Skeleton className="-ml-8 h-[34px] w-[34px] rounded-2xl" />
       </div>
       <div className="flex h-full max-h-full w-full flex-col gap-1.5 overflow-y-hidden">
         <MessageSkeleton dimensions="h-10 w-52" />

@@ -18,22 +18,45 @@ interface MessageProps {
   handleReply: (message: Message) => void
 }
 
-const Reaction: FC<{ reactions: Reaction[]; isAuthor: boolean }> = ({
-  reactions,
-  isAuthor,
-}) => (
-  <div className="relative w-0">
-    <div
-      className={`absolute z-10 ${isAuthor ? "right-[-20px]" : "left-[-20px]"} bottom-[-6px] flex items-center rounded-xl border-[3px] border-light bg-slate-200 text-sm`}
+const Reaction: FC<{
+  reactions?: Reaction[]
+  isAuthor: boolean
+  onReactionMenu: () => void
+}> = ({ reactions = [], isAuthor, onReactionMenu }) => {
+  if (!reactions || reactions.length === 0) return null
+
+  const grouped = reactions.reduce<Record<string, { count: number }>>(
+    (acc, r) => {
+      acc[r.emoji] = acc[r.emoji] || { count: 0 }
+      acc[r.emoji].count++
+      return acc
+    },
+    {}
+  )
+
+  return (
+    <button
+      className={`absolute z-10 ${isAuthor ? "right-1" : "left-1"} -bottom-4 rounded-full transition hover:scale-110`}
+      onClick={onReactionMenu}
     >
-      {reactions.map((r) => (
-        <span key={r.id} className="px-1">
-          {r.emoji}
-        </span>
-      ))}
-    </div>
-  </div>
-)
+      <div className="flex items-center rounded-full bg-slate-50/90 px-2 py-0.5 text-xs shadow-sm">
+        {Object.entries(grouped).map(([emoji, { count }]) => (
+          <div
+            key={emoji}
+            className="flex items-center gap-1 rounded-full px-1 py-0.5"
+          >
+            <span className="text-sm leading-none">{emoji}</span>
+            {count > 1 && (
+              <span className="text-[10px] font-medium text-slate-600">
+                {count}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </button>
+  )
+}
 
 const initContextMenu = { show: false, x: 0, y: 0 }
 
@@ -88,27 +111,28 @@ const ContextMenu: FC<{
   return (
     <div
       ref={ref}
-      className="absolute z-20 box-border flex w-44 flex-col gap-0.5 rounded-[0.85rem] bg-slate-100 px-2 py-2 shadow-lg"
+      className="absolute z-20 box-border flex w-32 flex-col gap-0.5 rounded-[0.85rem] bg-slate-50 px-1.5 py-1.5 shadow-lg"
       style={{ top: y, left: x }}
     >
       <button
         onClick={handleEditMessage}
-        className="flex items-center justify-between gap-2 text-nowrap rounded-lg px-2.5 py-1.5 hover:bg-slate-300 hover:bg-opacity-50"
+        className="flex items-center justify-between gap-2 text-nowrap rounded-b-sm rounded-t-lg px-2.5 py-1.5 hover:bg-slate-200 hover:bg-opacity-50"
       >
-        <p className="text-sm">edit message</p>
-        <FaPen className="text-[0.75rem]" />
+        <p className="text-xs">edit</p>
+        <FaPen className="text-[0.6rem]" />
       </button>
-      <div className="flex w-full items-center justify-center"></div>
-      <div className="mx-1 my-1 h-[1.5px] w-full rounded-2xl bg-slate-300 bg-opacity-60" />
+      <div className="mx-1 flex items-center justify-center py-0.5">
+        <div className="h-[1.5px] w-full rounded-2xl bg-slate-300 bg-opacity-60" />
+      </div>
       <Form action={formAction} onSubmit={onClose}>
         <input hidden name="message-id" value={messageId} readOnly />
         <input hidden name="chat-id" value={chatId} readOnly />
         <button
-          className="flex w-full items-center justify-between gap-2 text-nowrap rounded-lg px-2.5 py-1.5 hover:bg-red-300 hover:bg-opacity-30"
+          className="flex w-full items-center justify-between gap-2 text-nowrap rounded-b-lg rounded-t-sm px-2.5 py-1.5 hover:bg-red-200 hover:bg-opacity-30"
           type="submit"
         >
-          <p className="text-sm">unsend</p>
-          <FaUndo className="text-[0.75rem]" />
+          <p className="text-xs">unsend</p>
+          <FaUndo className="text-[0.6rem]" />
         </button>
       </Form>
     </div>
@@ -209,9 +233,9 @@ const Message: FC<MessageProps> = ({
 
   const handleContextMenu = () => {
     const rect = messageRef.current?.getBoundingClientRect() || new DOMRect()
-    let x = rect.left - 88
-    let y = rect.top - 100.5
-    if (x + 200 > window.innerWidth) x = window.innerWidth - 200
+    let x = rect.left - 77.5
+    let y = rect.top - 82
+    if (x + 150 > window.innerWidth) x = window.innerWidth - 150
     if (x < 0) x = 0
     if (y + 100.5 > window.innerHeight) y = window.innerHeight - 100.5
     if (y < 0) y = 0
@@ -312,7 +336,7 @@ const Message: FC<MessageProps> = ({
                 : message.parent.author.name}
           </p>
           <div
-            className={`mb-[-12px] inline-block w-fit max-w-[80%] overflow-hidden break-words rounded-[19px] bg-slate-400 bg-opacity-20 px-[18px] py-2.5 align-top text-sm text-opacity-70 opacity-50 shadow-sm`}
+            className={`-mb-3 inline-block w-fit max-w-[80%] overflow-hidden break-words rounded-[19px] bg-slate-400 bg-opacity-20 px-[18px] py-2.5 align-top text-sm text-opacity-70 opacity-50 shadow-sm`}
             style={{ wordBreak: "break-word" }}
           >
             {message.parent.text}
@@ -336,29 +360,27 @@ const Message: FC<MessageProps> = ({
           />
         )}
 
-        {isAuthor && message.reactions?.length > 0 && (
-          <Reaction reactions={message.reactions} isAuthor />
-        )}
-
         <div
           ref={messageRef}
-          className={`inline-block w-fit max-w-[80%] overflow-hidden rounded-[19px] bg-light align-top text-sm shadow-sm ${message.reactions?.length > 0 && "mb-2.5"}`}
+          className={`relative inline-block w-fit max-w-[80%] rounded-[19px] bg-light align-top shadow-sm ${message.reactions?.length && "mb-4"}`}
+          style={{ wordBreak: "break-word" }}
         >
           <div
-            className={`break-words px-[18px] py-2.5 ${
+            className={`break-words rounded-[19px] px-[18px] py-2.5 ${
               isAuthor
                 ? "bg-sunset text-white"
-                : "bg-slate-400 bg-opacity-20 text-opacity-70"
+                : "bg-slate-400/20 text-opacity-70"
             }`}
-            style={{ wordBreak: "break-word" }}
           >
-            {message.text}
+            <div className="text-sm">{message.text}</div>
           </div>
-        </div>
 
-        {!isAuthor && message.reactions?.length > 0 && (
-          <Reaction reactions={message.reactions} isAuthor={false} />
-        )}
+          <Reaction
+            reactions={message.reactions}
+            isAuthor={isAuthor}
+            onReactionMenu={handleReactionMenu}
+          />
+        </div>
 
         {!isAuthor && (
           <MessageActions

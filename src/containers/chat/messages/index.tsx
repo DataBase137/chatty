@@ -1,64 +1,207 @@
 "use client"
 
-import { editMessage, sendMessage } from "@/actions/chat"
+import {
+  createChat,
+  editMessage,
+  findChat,
+  getMessages,
+  sendMessage,
+} from "@/actions/chat"
 import Message from "@/components/chat/message"
 import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
 import Link from "next/link"
 import Pusher from "pusher-js"
 import { FC, useEffect, useRef, useState } from "react"
-import { FaArrowLeft, FaPaperPlane } from "react-icons/fa6"
+import { FaArrowLeft, FaPaperPlane, FaPlus } from "react-icons/fa6"
 import Form from "next/form"
+import { usePathname, useRouter } from "next/navigation"
 
 interface MessagesProps {
-  chat: Chat
+  initChat: Chat
   user: User
   initMessages: Message[]
+  friends: FriendRequest[]
 }
 
-const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
+type Friend = {
+  id: string
+  name: string
+  email: string
+}
+
+const NewChatInput: FC<{
+  friends: Friend[]
+  userId: string
+  setChat: (chat: Chat) => void
+  newChat: Chat
+}> = ({ friends, userId, setChat, newChat }) => {
+  const chatInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+
+  const [search, setSearch] = useState("")
+  const [selected, setSelected] = useState<Friend[]>([])
+  const [suggestions, setSuggestions] = useState<Friend[]>([])
+  const [groupExists, setGroupExists] = useState(false)
+  const [focus, setFocus] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearch(value)
+    setSuggestions(
+      value.length
+        ? friends.filter(
+            (f) =>
+              f.name.toLowerCase().includes(value.toLowerCase()) &&
+              !selected.some((s) => s.id === f.id)
+          )
+        : []
+    )
+  }
+
+  const handleSelect = (friend: Friend) => {
+    setSelected([...selected, friend])
+    setSearch("")
+    setSuggestions([])
+    chatInputRef.current?.focus()
+  }
+
+  const handleRemove = (id: string) => {
+    setSelected(selected.filter((f) => f.id !== id))
+  }
+
+  const handleSubmit = () => {
+    if (!selected.length) return
+    createChat(
+      selected.map((f) => f.id),
+      userId
+    ).then((chat) => router.push(`/c/${chat?.id}`))
+  }
+
+  useEffect(() => {
+    setChat(newChat)
+    if (!selected.length) {
+      setGroupExists(true)
+      return
+    }
+    const updatedUsers = [...selected.map((s) => s.id), userId]
+    findChat(updatedUsers).then((chat) => {
+      setGroupExists(!!chat)
+      if (chat) setChat(chat)
+    })
+  }, [selected, userId, newChat, setChat])
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !search && selected.length)
+      handleRemove(selected[selected.length - 1].id)
+    if (e.key === "Escape") chatInputRef.current?.blur()
+    if (e.key === "Enter" && suggestions[0]) handleSelect(suggestions[0])
+  }
+
+  return (
+    <Form action={handleSubmit} className="flex w-full gap-2">
+      <div
+        className={`flex w-full min-w-56 flex-1 flex-wrap items-center gap-1 rounded-[1.5rem] bg-slate-300/20 px-5 py-1 text-sm text-opacity-70 transition-all ${focus && "ring-2 ring-sunset"}`}
+      >
+        {selected.map((friend) => (
+          <span key={friend.id}>{friend.name},</span>
+        ))}
+        <input
+          value={search}
+          type="text"
+          onChange={handleChange}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
+          onKeyDown={handleKeyDown}
+          placeholder={selected.length ? "" : "add friends to create chat"}
+          className="min-w-[120px] flex-1 border-none bg-transparent py-2 text-sm focus:outline-none"
+          ref={chatInputRef}
+        />
+      </div>
+
+      {suggestions.length > 0 && (
+        <div className="absolute z-10 mt-12 box-border flex w-1/2 flex-col gap-1 rounded-[0.85rem] bg-slate-50 px-2 py-2 shadow-lg">
+          {suggestions.map((friend) => (
+            <button
+              key={friend.id}
+              type="button"
+              onClick={() => handleSelect(friend)}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-200/50"
+            >
+              <span className="text-sm">{friend.name}</span>
+              <span className="text-xs opacity-80">{friend.email}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={groupExists}
+        className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70 disabled:opacity-50 disabled:hover:bg-opacity-90"
+      >
+        <FaPlus />
+      </button>
+    </Form>
+  )
+}
+
+const Messages: FC<MessagesProps> = ({
+  initChat,
+  user,
+  initMessages,
+  friends,
+}) => {
   const chatRef = useRef<HTMLDivElement>(null)
+  const [chat, setChat] = useState<Chat>(initChat)
   const [messages, setMessages] = useState<Message[]>(initMessages)
   const [edit, setEdit] = useState<{ message: Message; text: string } | null>(
     null
   )
   const [reply, setReply] = useState<Message | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const isNew = pathname === "/c/new"
+  const newChat: Chat = {
+    isGroup: true,
+    id: "new",
+    name: "new message",
+    createdAt: new Date(),
+    lastMessageAt: new Date(),
+    messages: [],
+    participants: [
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    ],
+  }
 
   useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
     })
-
     const channel = pusher.subscribe(`chat-${chat.id}`)
 
-    channel.bind("new-message", (data: { message: Message }) => {
-      const message = data.message
-
-      setMessages((prev) => [...prev, message])
-    })
-
-    channel.bind("react-message", (data: { message: Message }) => {
-      const updatedMessage = data.message
-
+    channel.bind("new-message", (data: { message: Message }) =>
+      setMessages((prev) => [...prev, data.message])
+    )
+    channel.bind("react-message", (data: { message: Message }) =>
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+        prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
       )
-    })
-
-    channel.bind("unsend-message", (data: { messageId: string }) => {
-      const { messageId } = data
-
-      setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
-    })
-
-    channel.bind("edit-message", (data: { message: Message }) => {
-      const updatedMessage = data.message
-
+    )
+    channel.bind("unsend-message", (data: { messageId: string }) =>
+      setMessages((prev) => prev.filter((msg) => msg.id !== data.messageId))
+    )
+    channel.bind("edit-message", (data: { message: Message }) =>
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
+        prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
       )
-    })
+    )
 
     return () => {
       channel.unbind_all()
@@ -67,22 +210,24 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
   }, [chat])
 
   useEffect(() => {
-    const chat = chatRef.current
-    if (!chat) return
+    if (isNew) {
+      getMessages(chat.id).then(setMessages)
+    }
+  }, [chat, isNew])
+
+  useEffect(() => {
+    const chatDiv = chatRef.current
+    if (!chatDiv) return
 
     const handleResize = () => {
-      chat.scrollTop = chat.scrollHeight
+      chatDiv.scrollTop = chatDiv.scrollHeight
     }
-
     handleResize()
 
     const resizeObserver = new window.ResizeObserver(handleResize)
-    resizeObserver.observe(chat)
-
-    return () => {
-      resizeObserver.disconnect()
-    }
-  }, [messages, chatRef])
+    resizeObserver.observe(chatDiv)
+    return () => resizeObserver.disconnect()
+  }, [messages])
 
   const handleEditMessage = async (msg: Message, onClose: () => void) => {
     setEdit({ message: msg, text: msg.text })
@@ -96,26 +241,45 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
     inputRef.current?.focus()
   }
 
+  const friendsMapped: Friend[] = friends.map((f) =>
+    f.sender.id === user.id
+      ? { id: f.receiver.id, name: f.receiver.name, email: f.receiver.email }
+      : { id: f.sender.id, name: f.sender.name, email: f.sender.email }
+  )
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <div className="flex w-full items-center justify-between px-4 pb-1">
+      <div
+        className={`flex w-full items-center ${isNew ? "" : "justify-between"} px-4 pb-1`}
+      >
         <Link
           className="ml-[-2rem] rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
           href="/c"
         >
           <FaArrowLeft />
         </Link>
-        <h2 className="text-2xl font-semibold">
-          {formatChatName(chat, user.id || "")}
-        </h2>
-        <p className="text-sm text-slate-600">
-          {chat.isGroup &&
-            chat.name === formatChatName(chat, user?.id || "") &&
-            `${chat.participants
-              .filter((p) => p.id !== user.id)
-              .map((p) => p.name)
-              .join(", ")}`}
-        </p>
+        {isNew ? (
+          <NewChatInput
+            friends={friendsMapped}
+            userId={user.id}
+            setChat={setChat}
+            newChat={newChat}
+          />
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold">
+              {formatChatName(chat, user.id || "")}
+            </h2>
+            <p className="text-sm text-slate-600">
+              {chat.isGroup &&
+                chat.name === formatChatName(chat, user?.id || "") &&
+                chat.participants
+                  .filter((p) => p.id !== user.id)
+                  .map((p) => p.name)
+                  .join(", ")}
+            </p>
+          </>
+        )}
       </div>
 
       <div
@@ -125,23 +289,21 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
         {messages.map((message, index) => {
           const timestamp = new Date(message.createdAt)
           const oldTimestamp = new Date(messages[index - 1]?.createdAt)
-
-          const conditional =
+          const showTimestamp =
+            index === 0 ||
             (index !== 0 &&
               Math.abs(timestamp.getTime() - oldTimestamp.getTime()) >=
-                20 * 60 * 1000) ||
-            index === 0
-
-          const nameNeeded = messages[index - 1]?.authorId !== message.authorId
+                20 * 60 * 1000)
+          const showName = messages[index - 1]?.authorId !== message.authorId
 
           return (
             <Message
               key={message.id}
               message={message}
-              conditional={conditional}
+              conditional={showTimestamp}
               userId={user.id}
               chat={chat}
-              nameNeeded={nameNeeded}
+              nameNeeded={showName}
               handleEditMessage={handleEditMessage}
               handleReply={handleReply}
             />
@@ -157,11 +319,17 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
                 editMessage(e)
                 setEdit(null)
               }
-            : (e) => {
-                sendMessage(e)
-                setReply(null)
-              }
+            : chat.id === "new"
+              ? () => {}
+              : (e) => {
+                  sendMessage(e)
+                  if (isNew) router.push(chat.id)
+                  setReply(null)
+                }
         }
+        onSubmit={(e) => {
+          if (chat.id === "new") e.preventDefault()
+        }}
       >
         {edit && (
           <div className="relative h-8">
@@ -192,7 +360,9 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
               placeholder={
                 edit
                   ? "type to edit message"
-                  : `message ${formatChatName(chat, user.id)}`
+                  : chat.id === "new"
+                    ? "create chat to send message"
+                    : `message ${formatChatName(chat, user.id)}`
               }
               type="text"
               className="input w-full bg-slate-300 bg-opacity-20"
@@ -209,7 +379,6 @@ const Messages: FC<MessagesProps> = ({ chat, user, initMessages }) => {
                     inputRef.current?.blur()
                   }
                 }
-
                 window.addEventListener("keydown", handleKeyDown)
                 return () => {
                   window.removeEventListener("keydown", handleKeyDown)

@@ -103,7 +103,7 @@ export const acceptRequest = async (id: string): Promise<void> => {
       request,
     })
 
-    await createChat([request.senderId, request.receiverId])
+    await createChat([request.senderId], request.receiverId)
   } catch (error) {
     console.error(error)
   }

@@ -2,13 +2,7 @@
 
 import prisma from "@/lib/db"
 import Pusher from "pusher"
-import { getUser } from "./auth"
-import {
-  Chat as PrChat,
-  User,
-  FriendRequest as PrFriendRequest,
-} from "@prisma/client"
-import { getFriendRequests } from "./friends"
+import { Chat as PrChat } from "@prisma/client"
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID as string,
@@ -119,8 +113,11 @@ export const sendMessage = async (formData: FormData): Promise<void> => {
 
 export const createChat = async (
   members: string[],
+  userId: string,
   name?: string
-): Promise<void> => {
+): Promise<Chat | null> => {
+  members.push(userId)
+
   try {
     const chat: Chat = await prisma.chat.create({
       data: {
@@ -145,22 +142,12 @@ export const createChat = async (
         chat,
       })
     })
+
+    return chat
   } catch (error) {
     console.error(error)
+    return null
   }
-}
-
-export const createChatHandler = async (
-  _currentState: unknown,
-  formData: FormData
-) => {
-  const name = formData.get("name")
-  const members = String(formData.get("users"))
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean)
-
-  await createChat(members, name ? String(name) : undefined)
 }
 
 export const verifyChat = async (
@@ -187,45 +174,7 @@ export const verifyChat = async (
   }
 }
 
-export const fetchData = async (
-  chatId?: string
-): Promise<{
-  user: User
-  globChat: Chat | null
-  chats: Chat[]
-  messages: Message[]
-  friends: (PrFriendRequest & FriendRequest)[]
-}> => {
-  try {
-    const user = await getUser()
-
-    const chats = await getChats(user.id)
-
-    const friends = await getFriendRequests(user.id)
-
-    let messages: Message[] = []
-    let chat: Chat | null = null
-
-    if (chatId) {
-      chat = await verifyChat(user.id, chatId)
-
-      messages = await getMessages(chatId)
-    }
-
-    return { user, globChat: chat, chats, messages, friends }
-  } catch (error) {
-    console.error(error)
-    return {
-      user: {} as User,
-      globChat: null,
-      chats: [],
-      messages: [],
-      friends: [],
-    }
-  }
-}
-
-export const findChat = async (userIds: string[]): Promise<boolean | null> => {
+export const findChat = async (userIds: string[]): Promise<Chat | null> => {
   try {
     const chats = await prisma.chat.findMany({
       where: {
@@ -243,12 +192,20 @@ export const findChat = async (userIds: string[]): Promise<boolean | null> => {
             name: true,
           },
         },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { author: { select: { name: true } } },
+        },
       },
+      orderBy: { lastMessageAt: "desc" },
     })
 
-    chats.filter((c) => c.participants.length === userIds.length)
+    const trueChats = chats.filter(
+      (c) => c.participants.length === userIds.length
+    )
 
-    return chats.length > 0
+    return trueChats.length > 0 ? trueChats[0] : null
   } catch (error) {
     console.error(error)
     return null

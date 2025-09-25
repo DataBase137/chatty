@@ -33,7 +33,7 @@ made with nextjs, tailwindcss, and prisma
 ## known bugs
 
 - auth and friend forms reset on error
-- reactions go off the message and don't show who reacted
+- reactions don't show who reacted
 
 ## license
 

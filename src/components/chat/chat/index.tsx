@@ -56,14 +56,14 @@ const DateFormat: FC<{ date: Date; className?: string }> = ({
 
 interface ChatProps {
   chat: Chat
-  globChat: Chat | null
+  globChatId: string | null
   user: User | null
 }
 
-const Chat: FC<ChatProps> = ({ chat, globChat, user }) => {
+const Chat: FC<ChatProps> = ({ chat, globChatId, user }) => {
   return (
     <Link
-      className={`flex flex-col gap-1 rounded-2xl bg-slate-300 ${chat.id === globChat?.id ? "bg-opacity-70" : "bg-opacity-20 hover:bg-opacity-40"} px-5 py-4 transition-all`}
+      className={`flex flex-col gap-1 rounded-2xl bg-slate-300 ${chat.id === globChatId ? "bg-opacity-70" : "bg-opacity-20 hover:bg-opacity-40"} px-5 py-4 transition-all`}
       href={`/c/${chat.id}`}
       key={chat.id}
     >

@@ -75,7 +75,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
         {dedicated ? (
           <>
             <Link
-              className="ml-[-2rem] rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+              className="-ml-8 rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
               href="/c"
             >
               <FaArrowLeft />
