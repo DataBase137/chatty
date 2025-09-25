@@ -1,7 +1,7 @@
 # chatty
 
 a chat app
-made with nextjs, tailwindcss, and prisma
+made with nextjs, tailwindcss, prisma, and pusher
 
 ## features
 
