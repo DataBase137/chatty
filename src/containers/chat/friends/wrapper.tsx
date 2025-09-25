@@ -5,7 +5,7 @@ import { getFriendRequests } from "@/actions/friends"
 
 const FriendsWrapper: FC<{ dedicated?: boolean }> = async ({ dedicated }) => {
   const user = await getUser()
-  const friends = await getFriendRequests(user.id)
+  const friends = await getFriendRequests()
 
   return <Friends initFriends={friends} user={user} dedicated={dedicated} />
 }

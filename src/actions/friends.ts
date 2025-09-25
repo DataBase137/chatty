@@ -1,15 +1,16 @@
 "use server"
 
 import prisma from "@/lib/db"
-import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
+import { FriendRequest as PrFriendRequest } from "@prisma/client"
 import Pusher from "pusher"
 import { createChat } from "./chat"
+import { getUser } from "./auth"
 
 const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID as string,
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY as string,
-  secret: process.env.PUSHER_SECRET as string,
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
+  cluster: "us3",
   useTLS: true,
 })
 
@@ -149,16 +150,15 @@ export const rejectRequest = async (id: string): Promise<void> => {
   }
 }
 
-export const cancelRequest = async (
-  userId: string,
-  friendId: string
-): Promise<void> => {
+export const cancelRequest = async (friendId: string): Promise<void> => {
+  const user = await getUser()
+
   try {
     await prisma.friendRequest.delete({
       where: {
         senderId_receiverId: {
           senderId: friendId,
-          receiverId: userId,
+          receiverId: user.id,
         },
       },
     })
@@ -167,14 +167,16 @@ export const cancelRequest = async (
   }
 }
 
-export const getFriendRequests = async (
-  userId: string
-): Promise<(PrFriendRequest & FriendRequest)[]> => {
+export const getFriendRequests = async (): Promise<
+  (PrFriendRequest & FriendRequest)[]
+> => {
+  const user = await getUser()
+
   try {
     const requests: (PrFriendRequest & FriendRequest)[] =
       await prisma.friendRequest.findMany({
         where: {
-          OR: [{ senderId: userId }, { receiverId: userId }],
+          OR: [{ senderId: user.id }, { receiverId: user.id }],
         },
         include: {
           sender: {
@@ -202,15 +204,14 @@ export const getFriendRequests = async (
   }
 }
 
-export const getFriends = async (
-  userId: string,
-  search: string
-): Promise<User[]> => {
+export const getFriends = async (): Promise<Friend[]> => {
+  const user = await getUser()
+
   try {
     const requests: (PrFriendRequest & FriendRequest)[] =
       await prisma.friendRequest.findMany({
         where: {
-          OR: [{ senderId: userId }, { receiverId: userId }],
+          OR: [{ senderId: user.id }, { receiverId: user.id }],
           status: "ACCEPTED",
         },
         include: {
@@ -232,11 +233,11 @@ export const getFriends = async (
         orderBy: { createdAt: "desc" },
       })
 
-    const friends = requests
-      .map((req) => (req.senderId === userId ? req.receiver : req.sender))
-      .filter((user) => user.name.toLowerCase().includes(search.toLowerCase()))
+    const friends = requests.map((req) =>
+      req.senderId === user.id ? req.receiver : req.sender
+    )
 
-    return friends as User[]
+    return friends
   } catch (error) {
     console.error(error)
     return []

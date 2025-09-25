@@ -80,3 +80,9 @@ type Reaction = {
   userId: string
   messageId: string
 }
+
+type Friend = {
+  id: string
+  name: string
+  email: string
+}

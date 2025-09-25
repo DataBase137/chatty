@@ -3,12 +3,12 @@
 import { sendRequest } from "@/actions/friends"
 import Friend from "@/components/chat/friend"
 import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
-import Pusher from "pusher-js"
 import { FC, useActionState, useEffect, useRef, useState } from "react"
 import { useFormStatus } from "react-dom"
 import { FaArrowLeft, FaPlus } from "react-icons/fa6"
 import Form from "next/form"
 import Link from "next/link"
+import { usePusher } from "@/hooks/usePusher"
 
 interface FriendsProps {
   initFriends: (PrFriendRequest & FriendRequest)[]
@@ -22,6 +22,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
   const [state, formAction] = useActionState(sendRequest, "")
   const emailRef = useRef<HTMLInputElement>(null)
   const { pending } = useFormStatus()
+  const { subscribe } = usePusher()
 
   switch (state) {
     case "invalid email":
@@ -33,13 +34,8 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
   }
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
-    })
-
-    const channel = pusher.subscribe(`user-${user.id}`)
-
-    channel.bind(
+    subscribe(
+      `user-${user.id}`,
       "new-request",
       (data: { request: PrFriendRequest & FriendRequest }) => {
         const request = data.request
@@ -48,7 +44,8 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
       }
     )
 
-    channel.bind(
+    subscribe(
+      `user-${user.id}`,
       "update-request",
       (data: { request: PrFriendRequest & FriendRequest }) => {
         const request = data.request
@@ -60,12 +57,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
         )
       }
     )
-
-    return () => {
-      channel.unbind_all()
-      pusher.unsubscribe(`user-${user.id}`)
-    }
-  }, [user])
+  }, [user, subscribe])
 
   return (
     <div className="flex w-full flex-col items-center gap-4 px-4">

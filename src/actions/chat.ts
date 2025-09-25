@@ -3,12 +3,13 @@
 import prisma from "@/lib/db"
 import Pusher from "pusher"
 import { Chat as PrChat } from "@prisma/client"
+import { getUser } from "./auth"
 
 const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID as string,
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY as string,
-  secret: process.env.PUSHER_SECRET as string,
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
+  cluster: "us3",
   useTLS: true,
 })
 
@@ -150,13 +151,12 @@ export const createChat = async (
   }
 }
 
-export const verifyChat = async (
-  userId: string,
-  chatId: string
-): Promise<Chat | null> => {
+export const verifyChat = async (chatId: string): Promise<Chat | null> => {
+  const user = await getUser()
+
   try {
     const chat: Chat | null = await prisma.chat.findFirst({
-      where: { id: chatId, participants: { some: { id: userId } } },
+      where: { id: chatId, participants: { some: { id: user.id } } },
       include: {
         participants: true,
         messages: {
@@ -214,17 +214,17 @@ export const findChat = async (userIds: string[]): Promise<Chat | null> => {
 
 export const reactMessage = async (
   messageId: string,
-  chatId: string,
-  userId: string,
   emoji: string
 ): Promise<void> => {
+  const user = await getUser()
+
   try {
     const existingReaction = await prisma.reaction.findFirst({
-      where: { messageId, userId },
+      where: { messageId, userId: user.id },
     })
 
     const sameReaction = await prisma.reaction.findFirst({
-      where: { messageId, userId, emoji },
+      where: { messageId, userId: user.id, emoji },
     })
 
     if (sameReaction) {
@@ -239,7 +239,7 @@ export const reactMessage = async (
       }
 
       await prisma.reaction.create({
-        data: { messageId, userId, emoji },
+        data: { messageId, userId: user.id, emoji },
       })
     }
 
@@ -258,7 +258,7 @@ export const reactMessage = async (
       },
     })
 
-    await pusher.trigger(`chat-${chatId}`, "react-message", {
+    await pusher.trigger(`chat-${message?.chatId}`, "react-message", {
       message,
     })
   } catch (error) {

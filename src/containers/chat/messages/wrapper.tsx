@@ -2,17 +2,17 @@ import { FC } from "react"
 import Messages from "."
 import { getMessages, verifyChat } from "@/actions/chat"
 import { getUser } from "@/actions/auth"
-import { getFriendRequests } from "@/actions/friends"
+import { getFriends } from "@/actions/friends"
 
 const MessagesWrapper: FC<{ chatId?: string }> = async ({ chatId }) => {
   const user = await getUser()
-  const friends = await getFriendRequests(user.id)
+  const friends = await getFriends()
 
   let messages: Message[] = []
   let chat: Chat | null = null
 
   if (chatId && chatId != "new") {
-    chat = await verifyChat(user.id, chatId)
+    chat = await verifyChat(chatId)
     messages = await getMessages(chatId)
   }
 

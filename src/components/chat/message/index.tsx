@@ -213,7 +213,7 @@ const Message: FC<MessageProps> = ({
   const messageRef = useRef<HTMLDivElement>(null)
 
   const handleEmojiClick = async (emojiData: any) => {
-    await reactMessage(message.id, chat.id, userId, emojiData.emoji)
+    await reactMessage(message.id, emojiData.emoji)
     setReactionMenu(initContextMenu)
   }
 

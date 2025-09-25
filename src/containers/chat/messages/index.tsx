@@ -1,41 +1,28 @@
 "use client"
 
-import {
-  createChat,
-  editMessage,
-  findChat,
-  getMessages,
-  sendMessage,
-} from "@/actions/chat"
+import { createChat, editMessage, findChat, sendMessage } from "@/actions/chat"
 import Message from "@/components/chat/message"
 import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
 import Link from "next/link"
-import Pusher from "pusher-js"
 import { FC, useEffect, useRef, useState } from "react"
 import { FaArrowLeft, FaPaperPlane, FaPlus } from "react-icons/fa6"
 import Form from "next/form"
 import { usePathname, useRouter } from "next/navigation"
+import { usePusher } from "@/hooks/usePusher"
 
 interface MessagesProps {
   initChat: Chat
   user: User
   initMessages: Message[]
-  friends: FriendRequest[]
-}
-
-type Friend = {
-  id: string
-  name: string
-  email: string
+  friends: Friend[]
 }
 
 const NewChatInput: FC<{
   friends: Friend[]
-  userId: string
+  user: User
   setChat: (chat: Chat) => void
-  newChat: Chat
-}> = ({ friends, userId, setChat, newChat }) => {
+}> = ({ friends, user, setChat }) => {
   const chatInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
@@ -74,22 +61,39 @@ const NewChatInput: FC<{
     if (!selected.length) return
     createChat(
       selected.map((f) => f.id),
-      userId
+      user.id
     ).then((chat) => router.push(`/c/${chat?.id}`))
   }
 
   useEffect(() => {
-    setChat(newChat)
+    setChat({
+      isGroup: true,
+      id: "new",
+      name: "new message",
+      createdAt: new Date(),
+      lastMessageAt: new Date(),
+      messages: [],
+      participants: [
+        {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      ],
+    } as Chat)
+
     if (!selected.length) {
       setGroupExists(true)
       return
     }
-    const updatedUsers = [...selected.map((s) => s.id), userId]
+
+    const updatedUsers = [...selected.map((s) => s.id), user.id]
+
     findChat(updatedUsers).then((chat) => {
       setGroupExists(!!chat)
       if (chat) setChat(chat)
     })
-  }, [selected, userId, newChat, setChat])
+  }, [user, selected, setChat])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !search && selected.length)
@@ -120,7 +124,7 @@ const NewChatInput: FC<{
       </div>
 
       {suggestions.length > 0 && (
-        <div className="absolute z-10 mt-12 box-border flex w-1/2 flex-col gap-1 rounded-[0.85rem] bg-slate-50 px-2 py-2 shadow-lg">
+        <div className="absolute z-30 mt-12 box-border flex w-1/2 flex-col gap-1 rounded-[0.85rem] bg-slate-50 px-2 py-2 shadow-lg">
           {suggestions.map((friend) => (
             <button
               key={friend.id}
@@ -162,56 +166,43 @@ const Messages: FC<MessagesProps> = ({
   const inputRef = useRef<HTMLInputElement>(null)
   const pathname = usePathname()
   const router = useRouter()
-
   const isNew = pathname === "/c/new"
-  const newChat: Chat = {
-    isGroup: true,
-    id: "new",
-    name: "new message",
-    createdAt: new Date(),
-    lastMessageAt: new Date(),
-    messages: [],
-    participants: [
-      {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    ],
-  }
+
+  const { subscribe } = usePusher()
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
-    })
-    const channel = pusher.subscribe(`chat-${chat.id}`)
-
-    channel.bind("new-message", (data: { message: Message }) =>
+    subscribe(`chat-${chat.id}`, "new-message", (data: { message: Message }) =>
       setMessages((prev) => [...prev, data.message])
     )
-    channel.bind("react-message", (data: { message: Message }) =>
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
-      )
-    )
-    channel.bind("unsend-message", (data: { messageId: string }) =>
-      setMessages((prev) => prev.filter((msg) => msg.id !== data.messageId))
-    )
-    channel.bind("edit-message", (data: { message: Message }) =>
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
-      )
+
+    subscribe(
+      `chat-${chat.id}`,
+      "react-message",
+      (data: { message: Message }) =>
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
+        )
     )
 
-    return () => {
-      channel.unbind_all()
-      pusher.unsubscribe(`chat-${chat.id}`)
-    }
-  }, [chat])
+    subscribe(
+      `chat-${chat.id}`,
+      "unsend-message",
+      (data: { messageId: string }) =>
+        setMessages((prev) => prev.filter((msg) => msg.id !== data.messageId))
+    )
+
+    subscribe(`chat-${chat.id}`, "edit-message", (data: { message: Message }) =>
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
+      )
+    )
+  }, [chat.id, subscribe])
 
   useEffect(() => {
     if (isNew) {
-      getMessages(chat.id).then(setMessages)
+      fetch(`/api/messages/${chat.id}`)
+        .then((res) => res.json())
+        .then(setMessages)
     }
   }, [chat, isNew])
 
@@ -241,12 +232,6 @@ const Messages: FC<MessagesProps> = ({
     inputRef.current?.focus()
   }
 
-  const friendsMapped: Friend[] = friends.map((f) =>
-    f.sender.id === user.id
-      ? { id: f.receiver.id, name: f.receiver.name, email: f.receiver.email }
-      : { id: f.sender.id, name: f.sender.name, email: f.sender.email }
-  )
-
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div
@@ -259,12 +244,7 @@ const Messages: FC<MessagesProps> = ({
           <FaArrowLeft />
         </Link>
         {isNew ? (
-          <NewChatInput
-            friends={friendsMapped}
-            userId={user.id}
-            setChat={setChat}
-            newChat={newChat}
-          />
+          <NewChatInput friends={friends} user={user} setChat={setChat} />
         ) : (
           <>
             <h2 className="text-2xl font-semibold">

@@ -23,7 +23,9 @@ export const generateToken = async (id: string) => {
 }
 
 const setCookie = async (name: string, data: string, expires: Date) => {
-  ;(await cookies()).set(name, data, {
+  const cookieStore = await cookies()
+
+  cookieStore.set(name, data, {
     httpOnly: true,
     path: "/",
     sameSite: "strict",
@@ -107,7 +109,9 @@ const login = async (formData: FormData) => {
 }
 
 export const logOut = async () => {
-  ;(await cookies()).delete("token")
+  const cookieStore = await cookies()
+
+  cookieStore.delete("token")
 
   redirect("/login")
 }
@@ -125,8 +129,10 @@ export const verifyAuth = async (token: string) => {
 }
 
 export const getUser = async () => {
+  const cookieStore = await cookies()
+
   try {
-    const token = (await cookies()).get("token")?.value
+    const token = cookieStore.get("token")?.value
 
     if (!token) throw new Error("No token found")
 
@@ -149,10 +155,12 @@ export const getUser = async () => {
   }
 }
 
-export const deleteUser = async (userId: string) => {
+export const deleteUser = async () => {
+  const user = await getUser()
+
   await prisma.user.delete({
     where: {
-      id: userId,
+      id: user.id,
     },
   })
 

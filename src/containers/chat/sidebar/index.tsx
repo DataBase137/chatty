@@ -6,9 +6,9 @@ import { User } from "@prisma/client"
 import { FC, useEffect, useState } from "react"
 import { FaGear, FaPlus, FaRightFromBracket, FaUserPlus } from "react-icons/fa6"
 import { formatChatName } from "@/hooks/formatChatName"
-import Pusher from "pusher-js"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { usePusher } from "@/hooks/usePusher"
 
 interface SidebarProps {
   initChats: Chat[]
@@ -46,54 +46,58 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
     }
   }, [pathname, user])
 
+  const { subscribe } = usePusher()
+
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY as string, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
+    subscribe(`user-${user.id}`, "new-chat", (data: { chat: Chat }) => {
+      setChats((prev) => {
+        if (prev.some((c) => c.id === data.chat.id)) return prev
+        return [data.chat, ...prev]
+      })
+
+      subscribe(
+        `chat-${data.chat.id}`,
+        "new-message",
+        (data: { message: Message }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex((c) => c.id === data.message.chatId)
+            if (idx === -1) return prev
+
+            const updated = {
+              ...prev[idx],
+              messages: [data.message],
+              lastMessageAt: new Date(data.message.createdAt),
+            }
+
+            const newChats = [...prev]
+            newChats.splice(idx, 1)
+            newChats.unshift(updated)
+            return newChats
+          })
+        }
+      )
     })
 
-    const channels = chats.map((c) => {
-      const channel = pusher.subscribe(`chat-${c.id}`)
+    initChats.forEach((c) => {
+      subscribe(`chat-${c.id}`, "new-message", (data: { message: Message }) => {
+        setChats((prev) => {
+          const idx = prev.findIndex((ch) => ch.id === data.message.chatId)
+          if (idx === -1) return prev
 
-      channel.bind("new-message", (data: { message: Message }) => {
-        const message = data.message
-
-        setChats((chats) => {
-          const chatIndex = chats.findIndex(
-            (c: Chat) => c.id === message.chatId
-          )
-          const newChats = [...chats]
-
-          const updatedChat: Chat = {
-            ...newChats[chatIndex],
-            messages: [message],
-            lastMessageAt: new Date(message.createdAt),
+          const updated = {
+            ...prev[idx],
+            messages: [data.message],
+            lastMessageAt: new Date(data.message.createdAt),
           }
 
-          newChats.splice(chatIndex, 1)
-          newChats.unshift(updatedChat)
-
+          const newChats = [...prev]
+          newChats.splice(idx, 1)
+          newChats.unshift(updated)
           return newChats
         })
       })
-
-      return channel
     })
-
-    const channel = pusher.subscribe(`user-${user.id}`)
-
-    channel.bind("new-chat", (data: { chat: Chat }) => {
-      const chat = data.chat
-
-      if (!chats.includes(chat)) setChats((prev) => [chat, ...prev])
-    })
-
-    return () => {
-      channels.forEach((channel) => {
-        channel.unbind_all()
-        pusher.unsubscribe(channel.name)
-      })
-    }
-  }, [chats, user.id])
+  }, [user.id, initChats, subscribe])
 
   return (
     <div className="flex h-full min-w-80 flex-col gap-3 px-4">
