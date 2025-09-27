@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { logOut, verifyAuth } from "@/actions/auth"
+import { getUser, logOut } from "@/actions/auth"
+import { User } from "@prisma/client"
 
 export const middleware = async (req: NextRequest) => {
   const token = req.cookies.get("token")?.value
@@ -23,14 +24,14 @@ export const middleware = async (req: NextRequest) => {
     return res
   }
 
-  const verified = await verifyAuth(token)
+  const user = await getUser()
 
-  if (verified && publicPaths.includes(pathname)) {
-    return NextResponse.redirect(new URL("/c", req.url))
+  if (!user && token) {
+    logOut()
   }
 
-  if (!verified) {
-    logOut()
+  if (user && publicPaths.includes(pathname)) {
+    return NextResponse.redirect(new URL("/c", req.url))
   }
 
   return res

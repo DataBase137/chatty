@@ -34,10 +34,7 @@ const setCookie = async (name: string, data: string, expires: Date) => {
   })
 }
 
-export const authenticate = async (
-  _currentState: unknown,
-  formData: FormData
-) => {
+export const authenticate = async (formData: FormData) => {
   const result = await (formData.get("name")
     ? signUp(formData)
     : login(formData))
@@ -151,12 +148,13 @@ export const getUser = async () => {
     return user
   } catch (error) {
     console.error(error)
-    return {} as User
+    return null
   }
 }
 
 export const deleteUser = async () => {
   const user = await getUser()
+  if (!user) return
 
   await prisma.user.delete({
     where: {
@@ -169,6 +167,8 @@ export const deleteUser = async () => {
 
 export const changeEmail = async (formData: FormData) => {
   const user = await getUser()
+  if (!user) return
+
   const email = formData.get("email") as string
 
   try {
@@ -187,6 +187,8 @@ export const changeEmail = async (formData: FormData) => {
 
 export const changePassword = async (formData: FormData) => {
   const user = await getUser()
+  if (!user) return
+
   const password = formData.get("current-password") as string
   const newPassword = formData.get("new-password") as string
 
@@ -212,11 +214,14 @@ export const changePassword = async (formData: FormData) => {
 
 export const updateAccount = async (_: unknown, formData: FormData) => {
   const user = await getUser()
+
   const results: {
     field: "name" | "email" | "password"
     status: "success" | "error"
     message: string
   }[] = []
+
+  if (!user) return results
 
   try {
     const name = formData.get("name") as string

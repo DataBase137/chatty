@@ -3,9 +3,12 @@ import Messages from "."
 import { getMessages, verifyChat } from "@/actions/chat"
 import { getUser } from "@/actions/auth"
 import { getFriends } from "@/actions/friends"
+import { redirect } from "next/navigation"
 
 const MessagesWrapper: FC<{ chatId?: string }> = async ({ chatId }) => {
   const user = await getUser()
+  if (!user) redirect("/")
+
   const friends = await getFriends()
 
   let messages: Message[] = []

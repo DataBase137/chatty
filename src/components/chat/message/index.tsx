@@ -127,12 +127,12 @@ const ContextMenu: FC<{
   return (
     <div
       ref={ref}
-      className="absolute z-20 box-border flex w-32 flex-col gap-0.5 rounded-[0.85rem] bg-slate-50 px-1.5 py-1.5 shadow-lg"
+      className="absolute z-20 box-border flex w-32 flex-col gap-0.5 rounded-xl bg-slate-50 p-1.5 shadow-lg"
       style={{ top: y, left: x }}
     >
       <button
         onClick={handleEditMessage}
-        className="flex items-center justify-between gap-2 text-nowrap rounded-b-sm rounded-t-lg px-2.5 py-1.5 hover:bg-slate-200 hover:bg-opacity-50"
+        className="flex items-center justify-between gap-2 text-nowrap rounded-b-md rounded-t-lg px-2.5 py-1.5 hover:bg-slate-200 hover:bg-opacity-50"
       >
         <p className="text-xs">edit</p>
         <FaPen className="text-[0.6rem]" />
@@ -144,7 +144,7 @@ const ContextMenu: FC<{
         <input hidden name="message-id" value={messageId} readOnly />
         <input hidden name="chat-id" value={chatId} readOnly />
         <button
-          className="flex w-full items-center justify-between gap-2 text-nowrap rounded-b-lg rounded-t-sm px-2.5 py-1.5 hover:bg-red-200 hover:bg-opacity-30"
+          className="flex w-full items-center justify-between gap-2 text-nowrap rounded-b-lg rounded-t-md px-2.5 py-1.5 hover:bg-red-200 hover:bg-opacity-30"
           type="submit"
         >
           <p className="text-xs">unsend</p>

@@ -153,12 +153,19 @@ export const createChat = async (
 
 export const verifyChat = async (chatId: string): Promise<Chat | null> => {
   const user = await getUser()
+  if (!user) return null
 
   try {
     const chat: Chat | null = await prisma.chat.findFirst({
       where: { id: chatId, participants: { some: { id: user.id } } },
       include: {
-        participants: true,
+        participants: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -217,6 +224,7 @@ export const reactMessage = async (
   emoji: string
 ): Promise<void> => {
   const user = await getUser()
+  if (!user) return
 
   try {
     const existingReaction = await prisma.reaction.findFirst({
@@ -346,6 +354,80 @@ export const editMessage = async (formData: FormData): Promise<void> => {
 
     await pusher.trigger(`chat-${chatId}`, "edit-message", {
       message,
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const renameChat = async (formData: FormData, chatId: string) => {
+  try {
+    const name = String(formData.get("name"))
+
+    const chat = await prisma.chat.update({
+      where: { id: chatId },
+      data: { name },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { author: { select: { name: true } } },
+        },
+      },
+    })
+
+    await pusher.trigger(`chat-${chatId}`, "rename-chat", {
+      chat,
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const leaveChat = async (userId: string, chatId: string) => {
+  try {
+    const chat = await prisma.chat.update({
+      where: { id: chatId },
+      data: { participants: { disconnect: { id: userId } } },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { author: { select: { name: true } } },
+        },
+      },
+    })
+
+    await pusher.trigger(`chat-${chatId}`, "leave-chat", {
+      chat,
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const deleteChat = async (chatId: string) => {
+  try {
+    await prisma.chat.delete({
+      where: { id: chatId },
+    })
+
+    pusher.trigger(`chat-${chatId}`, "delete-chat", {
+      chatId,
     })
   } catch (error) {
     console.error(error)

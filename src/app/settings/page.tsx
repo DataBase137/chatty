@@ -2,10 +2,12 @@ import { getUser } from "@/actions/auth"
 import AccountForm from "@/containers/settings/form"
 import { NextPage } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { FaArrowLeft } from "react-icons/fa6"
 
 const Page: NextPage = async () => {
   const user = await getUser()
+  if (!user) redirect("/")
 
   return (
     <div className="flex h-full w-full flex-col justify-between px-6">

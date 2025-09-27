@@ -3,8 +3,7 @@
 import { sendRequest } from "@/actions/friends"
 import Friend from "@/components/chat/friend"
 import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
-import { FC, useActionState, useEffect, useRef, useState } from "react"
-import { useFormStatus } from "react-dom"
+import { FC, useEffect, useRef, useState } from "react"
 import { FaPlus } from "react-icons/fa6"
 import Form from "next/form"
 import { usePusher } from "@/hooks/usePusher"
@@ -12,35 +11,45 @@ import { usePusher } from "@/hooks/usePusher"
 interface FriendsProps {
   initFriends: (PrFriendRequest & FriendRequest)[]
   user: User
-  dedicated?: boolean
 }
 
-const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
+const Friends: FC<FriendsProps> = ({ initFriends, user }) => {
   const [friends, setFriends] = useState(initFriends)
-  const [state, formAction] = useActionState(sendRequest, "")
   const emailRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState("")
   const [error, setError] = useState("")
-  const { pending } = useFormStatus()
   const { subscribe } = usePusher()
+  const [status, setStatus] = useState("")
+  const [pending, setPending] = useState(false)
+
+  const formAction = async (formData: FormData) => {
+    setPending(true)
+    const res = await sendRequest(formData)
+    setStatus(res)
+    setPending(false)
+  }
 
   useEffect(() => {
-    if (state === "invalid email") {
+    if (status === "invalid email") {
       setError("no user with that email exists")
-    } else if (state === "current user") {
+    } else if (status === "current user") {
       setError("enter a different email")
-    } else if (state === "success") {
+    } else if (status === "success") {
       setError("")
       setValue("")
-    } else if (state === "unexpected error") {
+    } else if (status === "unexpected error") {
       setError("something went wrong")
     }
 
-    if (state && state !== "success") {
-      const timer = setTimeout(() => setError(""), 3000)
+    if (status !== "success") {
+      const timer = setTimeout(() => {
+        setError("")
+        setStatus("")
+      }, 3000)
+
       return () => clearTimeout(timer)
     }
-  }, [state])
+  }, [status])
 
   useEffect(() => {
     subscribe(
@@ -69,7 +78,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
   }, [user, subscribe])
 
   return (
-    <div className="flex w-full flex-col items-center gap-4 px-4">
+    <div className="flex w-full flex-col items-center px-4 pt-4">
       <div className="flex w-full items-center justify-center px-4"></div>
 
       <div className="w-5/6 py-2">
@@ -87,6 +96,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
               e.currentTarget.setCustomValidity("")
               setValue(e.target.value)
               setError("")
+              setStatus("")
             }}
           />
 

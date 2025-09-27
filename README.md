@@ -11,6 +11,7 @@ made with nextjs, tailwindcss, prisma, and pusher
 - send and recieve realtime messages
 - edit, unsend, and react, and reply to messages
 - change account details and delete accounts
+- rename, leave and delete chats
 
 ## roadmap
 
@@ -19,7 +20,6 @@ made with nextjs, tailwindcss, prisma, and pusher
 | login and signup with jwt authentication | true      |
 | postgres database with prisma accelerate | true      |
 | realtime messaging with pusher           | true      |
-| third-party authentication methods       | false     |
 | friends and dms                          | true      |
 | separate chat management                 | false     |
 | account customization and profiles       | false     |
@@ -37,6 +37,7 @@ made with nextjs, tailwindcss, prisma, and pusher
 - updating username/email doesnt update for other people until reload
 - chats will load every message, even if it's a lot
 - mobile layout doesn't fully work
+- weird unicode characters will bug out the lastest message chat section
 
 ## license
 

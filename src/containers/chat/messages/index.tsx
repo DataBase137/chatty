@@ -168,6 +168,7 @@ const Messages: FC<MessagesProps> = ({
   const router = useRouter()
   const isNew = pathname === "/c/new"
   const submitBtn = useRef<HTMLButtonElement>(null)
+  const [chatName, setChatName] = useState(formatChatName(chat, user.id))
 
   const { subscribe } = usePusher()
 
@@ -197,7 +198,17 @@ const Messages: FC<MessagesProps> = ({
         prev.map((msg) => (msg.id === data.message.id ? data.message : msg))
       )
     )
-  }, [chat.id, subscribe])
+
+    subscribe(`chat-${chat.id}`, "rename-chat", (data: { chat: Chat }) => {
+      setChat(data.chat)
+      setChatName(formatChatName(data.chat, user.id))
+    })
+
+    subscribe(`chat-${chat.id}`, "leave-chat", (data: { chat: Chat }) => {
+      setChat(data.chat)
+      setChatName(formatChatName(data.chat, user.id))
+    })
+  }, [chat.id, subscribe, user.id])
 
   useEffect(() => {
     if (isNew) {
@@ -259,12 +270,10 @@ const Messages: FC<MessagesProps> = ({
           <NewChatInput friends={friends} user={user} setChat={setChat} />
         ) : (
           <>
-            <h2 className="text-2xl font-semibold">
-              {formatChatName(chat, user.id || "")}
-            </h2>
+            <h2 className="text-2xl font-semibold">{chatName}</h2>
             <p className="text-sm text-slate-600">
               {chat.isGroup &&
-                chat.name === formatChatName(chat, user.id || "") &&
+                chat.name === chatName &&
                 `${chat.participants.length} users`}
             </p>
           </>
@@ -336,7 +345,7 @@ const Messages: FC<MessagesProps> = ({
                     ? "type to edit message"
                     : chat.id === "new"
                       ? "create chat to send message"
-                      : `message ${formatChatName(chat, user.id)}`
+                      : `message ${chatName}`
                 }
                 type="text"
                 className="input flex-1"

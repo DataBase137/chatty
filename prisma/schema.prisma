@@ -56,8 +56,8 @@ model FriendRequest {
   createdAt  DateTime @default(now())
 
   status   FriendshipStatus @default(PENDING)
-  sender   User             @relation("SentRequests", fields: [senderId], references: [id])
-  receiver User             @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  sender   User             @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User             @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
 }

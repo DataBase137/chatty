@@ -14,10 +14,7 @@ const pusher = new Pusher({
   useTLS: true,
 })
 
-export const sendRequest = async (
-  _currentState: unknown,
-  formData: FormData
-) => {
+export const sendRequest = async (formData: FormData) => {
   const email = String(formData.get("email") || "").trim()
   const userId = String(formData.get("user-id") || "")
 
@@ -153,6 +150,7 @@ export const rejectRequest = async (id: string): Promise<void> => {
 
 export const cancelRequest = async (friendId: string): Promise<void> => {
   const user = await getUser()
+  if (!user) return
 
   try {
     await prisma.friendRequest.delete({
@@ -172,6 +170,7 @@ export const getFriendRequests = async (): Promise<
   (PrFriendRequest & FriendRequest)[]
 > => {
   const user = await getUser()
+  if (!user) return []
 
   try {
     const requests: (PrFriendRequest & FriendRequest)[] =
@@ -207,6 +206,7 @@ export const getFriendRequests = async (): Promise<
 
 export const getFriends = async (): Promise<Friend[]> => {
   const user = await getUser()
+  if (!user) return []
 
   try {
     const requests: (PrFriendRequest & FriendRequest)[] =

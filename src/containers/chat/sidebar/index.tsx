@@ -7,7 +7,7 @@ import { FC, useEffect, useState } from "react"
 import { FaGear, FaPlus, FaRightFromBracket } from "react-icons/fa6"
 import { formatChatName } from "@/hooks/formatChatName"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { usePusher } from "@/hooks/usePusher"
 
 interface SidebarProps {
@@ -19,7 +19,8 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [chats, setChats] = useState<Chat[]>(initChats)
   const pathname = usePathname()
-  const chatId = pathname.slice(3)
+  const globChatId = pathname.slice(3)
+  const router = useRouter()
 
   useEffect(() => {
     setChats((prevChats) => prevChats.filter((chat) => chat.id !== "new"))
@@ -46,7 +47,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
     }
   }, [pathname, user])
 
-  const { subscribe } = usePusher()
+  const { subscribe, unsubscribe } = usePusher()
 
   useEffect(() => {
     subscribe(`user-${user.id}`, "new-chat", (data: { chat: Chat }) => {
@@ -131,6 +132,44 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
           })
         }
       )
+
+      subscribe(
+        `chat-${data.chat.id}`,
+        "rename-chat",
+        (data: { chat: Chat }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex((c) => c.id === data.chat.id)
+            if (idx === -1) return prev
+
+            const newChats = [...prev]
+            newChats[idx] = {
+              ...newChats[idx],
+              name: data.chat.name,
+            }
+
+            return newChats
+          })
+        }
+      )
+
+      subscribe(
+        `chat-${data.chat.id}`,
+        "leave-chat",
+        (data: { chat: Chat }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex((c) => c.id === data.chat.id)
+            if (idx === -1) return prev
+
+            const newChats = [...prev]
+            newChats[idx] = {
+              ...newChats[idx],
+              participants: data.chat.participants,
+            }
+
+            return newChats
+          })
+        }
+      )
     })
 
     initChats.forEach((c) => {
@@ -206,8 +245,59 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
           })
         }
       )
+
+      subscribe(`chat-${c.id}`, "rename-chat", (data: { chat: Chat }) => {
+        setChats((prev) => {
+          const idx = prev.findIndex((c) => c.id === data.chat.id)
+          if (idx === -1) return prev
+
+          const newChats = [...prev]
+          newChats[idx] = {
+            ...newChats[idx],
+            name: data.chat.name,
+          }
+
+          return newChats
+        })
+      })
+
+      subscribe(`chat-${c.id}`, "leave-chat", (data: { chat: Chat }) => {
+        if (
+          !data.chat.participants.includes({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          })
+        ) {
+          setChats((prev) => prev.filter((c) => c.id !== data.chat.id))
+          unsubscribe(`chat-${c.id}`)
+
+          if (data.chat.id === globChatId) {
+            router.push("/c")
+          }
+        } else {
+          setChats((prev) => {
+            const idx = prev.findIndex((c) => c.id === data.chat.id)
+            if (idx === -1) return prev
+
+            const newChats = [...prev]
+            newChats[idx] = {
+              ...newChats[idx],
+              participants: data.chat.participants,
+            }
+
+            return newChats
+          })
+        }
+      })
+
+      subscribe(`chat-${c.id}`, "delete-chat", (data: { chatId: string }) => {
+        setChats((prev) => prev.filter((c) => c.id !== data.chatId))
+        unsubscribe(`chat-${c.id}`)
+        if (data.chatId === globChatId) router.push("/c")
+      })
     })
-  }, [user.id, initChats, subscribe])
+  }, [user, initChats, subscribe, globChatId, router, unsubscribe])
 
   return (
     <div className="flex h-full min-w-80 flex-col gap-3 px-4">
@@ -241,11 +331,16 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
                 .includes(searchTerm.toLowerCase())
             )
             .map((chat) => (
-              <Chat key={chat.id} chat={chat} globChatId={chatId} user={user} />
+              <Chat
+                key={chat.id}
+                chat={chat}
+                globChatId={globChatId}
+                user={user}
+              />
             ))}
       </div>
 
-      <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70">
+      <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70 shadow-sm">
         <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
           {user.name}
         </p>

@@ -1,14 +1,13 @@
 "use client"
 
-import { useFormStatus } from "react-dom"
 import { authenticate } from "@/actions/auth"
-import { FC, useActionState, useState, useEffect } from "react"
+import { FC, useState, useEffect } from "react"
 import Link from "next/link"
 import Form from "next/form"
 
 const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
-  const [state, formAction] = useActionState(authenticate, "")
-  const { pending } = useFormStatus()
+  const [status, setStatus] = useState("")
+  const [pending, setPending] = useState(false)
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -18,12 +17,19 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
   const [emailError, setEmailError] = useState("")
   const [passwordError, setPasswordError] = useState("")
 
+  const formAction = async (formData: FormData) => {
+    setPending(true)
+    const res = await authenticate(formData)
+    setStatus(res)
+    setPending(false)
+  }
+
   useEffect(() => {
     setNameError("")
     setEmailError("")
     setPasswordError("")
 
-    switch (state) {
+    switch (status) {
       case "email":
         if (username) setEmailError("email already exists")
         else setEmailError("incorrect email")
@@ -32,7 +38,7 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
         setPasswordError("incorrect password")
         break
     }
-  }, [state, username])
+  }, [status, username])
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
@@ -55,8 +61,10 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
                 }`}
                 value={name}
                 onChange={(e) => {
+                  e.currentTarget.setCustomValidity("")
                   setName(e.target.value)
                   setNameError("")
+                  setStatus("")
                 }}
               />
               {nameError && <p className="text-xs text-red-600">{nameError}</p>}
@@ -74,8 +82,10 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
             }`}
             value={email}
             onChange={(e) => {
+              e.currentTarget.setCustomValidity("")
               setEmail(e.target.value)
               setEmailError("")
+              setStatus("")
             }}
           />
 
@@ -91,8 +101,10 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
             }`}
             value={password}
             onChange={(e) => {
+              e.currentTarget.setCustomValidity("")
               setPassword(e.target.value)
               setPasswordError("")
+              setStatus("")
             }}
           />
         </div>
