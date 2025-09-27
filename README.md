@@ -34,6 +34,9 @@ made with nextjs, tailwindcss, prisma, and pusher
 ## known bugs
 
 - reactions don't show who reacted
+- updating username/email doesnt update for other people until reload
+- chats will load every message, even if it's a lot
+- mobile layout doesn't fully work
 
 ## license
 

@@ -4,7 +4,7 @@ import { logOut } from "@/actions/auth"
 import Chat from "@/components/chat/chat"
 import { User } from "@prisma/client"
 import { FC, useEffect, useState } from "react"
-import { FaGear, FaPlus, FaRightFromBracket, FaUserPlus } from "react-icons/fa6"
+import { FaGear, FaPlus, FaRightFromBracket } from "react-icons/fa6"
 import { formatChatName } from "@/hooks/formatChatName"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -76,6 +76,61 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
           })
         }
       )
+
+      subscribe(
+        `chat-${data.chat.id}`,
+        "unsend-message",
+        (data: { messageId: string; lastMessage: Message | null }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex(
+              (ch) =>
+                ch.messages &&
+                ch.messages.length > 0 &&
+                ch.messages[0].id === data.messageId
+            )
+            if (idx === -1) return prev
+
+            const chat = prev[idx]
+            if (!chat.messages || chat.messages[0].id !== data.messageId)
+              return prev
+
+            const updated: Chat = {
+              ...chat,
+              messages: data.lastMessage ? [data.lastMessage] : [],
+              lastMessageAt: data.lastMessage
+                ? new Date(data.lastMessage.createdAt)
+                : new Date(),
+            }
+
+            const newChats = [...prev]
+            newChats.splice(idx, 1)
+            newChats.unshift(updated)
+            return newChats
+          })
+        }
+      )
+
+      subscribe(
+        `chat-${data.chat.id}`,
+        "edit-message",
+        (data: { message: Message }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex((ch) => ch.id === data.message.chatId)
+            if (idx === -1) return prev
+
+            const updated = {
+              ...prev[idx],
+              messages: [data.message],
+              lastMessageAt: new Date(data.message.createdAt),
+            }
+
+            const newChats = [...prev]
+            newChats.splice(idx, 1)
+            newChats.unshift(updated)
+            return newChats
+          })
+        }
+      )
     })
 
     initChats.forEach((c) => {
@@ -96,6 +151,61 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
           return newChats
         })
       })
+
+      subscribe(
+        `chat-${c.id}`,
+        "unsend-message",
+        (data: { messageId: string; lastMessage: Message | null }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex(
+              (ch) =>
+                ch.messages &&
+                ch.messages.length > 0 &&
+                ch.messages[0].id === data.messageId
+            )
+            if (idx === -1) return prev
+
+            const chat = prev[idx]
+            if (!chat.messages || chat.messages[0].id !== data.messageId)
+              return prev
+
+            const updated: Chat = {
+              ...chat,
+              messages: data.lastMessage ? [data.lastMessage] : [],
+              lastMessageAt: data.lastMessage
+                ? new Date(data.lastMessage.createdAt)
+                : new Date(),
+            }
+
+            const newChats = [...prev]
+            newChats.splice(idx, 1)
+            newChats.unshift(updated)
+            return newChats
+          })
+        }
+      )
+
+      subscribe(
+        `chat-${c.id}`,
+        "edit-message",
+        (data: { message: Message }) => {
+          setChats((prev) => {
+            const idx = prev.findIndex((ch) => ch.id === data.message.chatId)
+            if (idx === -1) return prev
+
+            const updated = {
+              ...prev[idx],
+              messages: [data.message],
+              lastMessageAt: new Date(data.message.createdAt),
+            }
+
+            const newChats = [...prev]
+            newChats.splice(idx, 1)
+            newChats.unshift(updated)
+            return newChats
+          })
+        }
+      )
     })
   }, [user.id, initChats, subscribe])
 
@@ -141,12 +251,6 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
         </p>
 
         <div className="flex items-center gap-0.5">
-          <Link
-            className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-            href="/friends"
-          >
-            <FaUserPlus />
-          </Link>
           <Link
             className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
             href="/settings"

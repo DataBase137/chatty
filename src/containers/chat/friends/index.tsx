@@ -5,9 +5,8 @@ import Friend from "@/components/chat/friend"
 import { FriendRequest as PrFriendRequest, User } from "@prisma/client"
 import { FC, useActionState, useEffect, useRef, useState } from "react"
 import { useFormStatus } from "react-dom"
-import { FaArrowLeft, FaPlus } from "react-icons/fa6"
+import { FaPlus } from "react-icons/fa6"
 import Form from "next/form"
-import Link from "next/link"
 import { usePusher } from "@/hooks/usePusher"
 
 interface FriendsProps {
@@ -25,7 +24,6 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
   const { pending } = useFormStatus()
   const { subscribe } = usePusher()
 
-  // handle server state changes
   useEffect(() => {
     if (state === "invalid email") {
       setError("no user with that email exists")
@@ -33,12 +31,11 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
       setError("enter a different email")
     } else if (state === "success") {
       setError("")
-      setValue("") // reset input
+      setValue("")
     } else if (state === "unexpected error") {
       setError("something went wrong")
     }
 
-    // auto-dismiss after 3 seconds
     if (state && state !== "success") {
       const timer = setTimeout(() => setError(""), 3000)
       return () => clearTimeout(timer)
@@ -73,31 +70,12 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
 
   return (
     <div className="flex w-full flex-col items-center gap-4 px-4">
-      <div
-        className={`flex w-full items-center ${
-          dedicated ? "justify-between" : "justify-center"
-        } px-4`}
-      >
-        {dedicated ? (
-          <>
-            <Link
-              className="-ml-8 rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-              href="/c"
-            >
-              <FaArrowLeft />
-            </Link>
-            <h2 className="text-2xl font-semibold">friends</h2>
-            <div />
-          </>
-        ) : (
-          <h2 className="text-2xl font-semibold">friends</h2>
-        )}
-      </div>
+      <div className="flex w-full items-center justify-center px-4"></div>
 
       <div className="w-5/6 py-2">
         <Form action={formAction} className="flex gap-2">
           <input
-            placeholder="add friend"
+            placeholder="enter email to send friend request"
             type="email"
             name="email"
             value={value}
@@ -108,7 +86,7 @@ const Friends: FC<FriendsProps> = ({ initFriends, user, dedicated }) => {
             onChange={(e) => {
               e.currentTarget.setCustomValidity("")
               setValue(e.target.value)
-              setError("") // clear error while typing
+              setError("")
             }}
           />
 

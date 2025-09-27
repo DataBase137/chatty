@@ -2,11 +2,18 @@
 
 import { reactMessage, unsendMessageHandler } from "@/actions/chat"
 import { useOnClickOutside } from "@/hooks/useOnClickOutside"
-import EmojiPicker from "emoji-picker-react"
 import Form from "next/form"
 import { FC, useActionState, useRef, useState } from "react"
 import { FaRegSmile, FaUndo } from "react-icons/fa"
 import { FaEllipsisVertical, FaPen, FaReply } from "react-icons/fa6"
+import dynamic from "next/dynamic"
+
+const Picker = dynamic(
+  () => {
+    return import("emoji-picker-react")
+  },
+  { ssr: false }
+)
 
 interface MessageProps {
   message: Message
@@ -76,9 +83,18 @@ const ReactionMenu: FC<{
       className="absolute z-20 flex w-fit"
       style={{ top: y, left: x }}
     >
-      <EmojiPicker
+      <Picker
         className="shadow-lg"
         reactionsDefaultOpen={true}
+        reactions={[
+          "1f44d",
+          "2764-fe0f",
+          "1f62d",
+          "1f602",
+          "1f494",
+          "1f44e",
+          "1f621",
+        ]}
         onEmojiClick={onEmojiClick}
         allowExpandReactions={false}
       />

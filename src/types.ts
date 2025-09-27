@@ -30,29 +30,38 @@ type Message = {
   chatId: string
   createdAt: Date
   authorId: string
-  parentId?: string | null
-  parent?: Message | null
-  replies?: Message[]
-  reactions: ({
-    user: {
-      name: string
-      id: string
-      email: string
-    }
-  } & {
+  parentId: string | null
+
+  author: {
+    id: string
+    name: string
+    email: string
+  }
+
+  reactions: {
     id: string
     emoji: string
     userId: string
     messageId: string
-  })[]
-} & {
-  author: {
+    user: {
+      id: string
+      name: string
+      email: string
+    }
+  }[]
+
+  parent: {
     id: string
-    name: string
+    text: string
+    chatId: string
     createdAt: Date
-    email: string
-    password: string
-  }
+    authorId: string
+    author: {
+      id: string
+      name: string
+      email: string
+    }
+  } | null
 }
 
 type FriendRequest = {

@@ -74,6 +74,7 @@ const AccountForm: FC<{ user: User }> = ({ user }) => {
               onChange={(e) => setName(e.target.value)}
               name="name"
               type="text"
+              autoComplete="off"
               minLength={2}
               className="input max-w-xl valid:ring-green-500 invalid:ring-red-500"
             />
@@ -99,6 +100,7 @@ const AccountForm: FC<{ user: User }> = ({ user }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               name="email"
+              autoComplete="username"
               type="email"
               className="input max-w-xl valid:ring-green-500 invalid:ring-red-500"
             />

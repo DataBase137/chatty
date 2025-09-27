@@ -167,6 +167,7 @@ const Messages: FC<MessagesProps> = ({
   const pathname = usePathname()
   const router = useRouter()
   const isNew = pathname === "/c/new"
+  const submitBtn = useRef<HTMLButtonElement>(null)
 
   const { subscribe } = usePusher()
 
@@ -232,6 +233,17 @@ const Messages: FC<MessagesProps> = ({
     inputRef.current?.focus()
   }
 
+  const formAction = (e: FormData) => {
+    if (edit) {
+      editMessage(e)
+      setEdit(null)
+    } else if (chat.id !== "new") {
+      sendMessage(e)
+      if (isNew) router.push(chat.id)
+      setReply(null)
+    }
+  }
+
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div
@@ -252,11 +264,8 @@ const Messages: FC<MessagesProps> = ({
             </h2>
             <p className="text-sm text-slate-600">
               {chat.isGroup &&
-                chat.name === formatChatName(chat, user?.id || "") &&
-                chat.participants
-                  .filter((p) => p.id !== user.id)
-                  .map((p) => p.name)
-                  .join(", ")}
+                chat.name === formatChatName(chat, user.id || "") &&
+                `${chat.participants.length} users`}
             </p>
           </>
         )}
@@ -293,103 +302,82 @@ const Messages: FC<MessagesProps> = ({
 
       <Form
         className="flex w-full flex-col"
-        action={
-          edit
-            ? (e) => {
-                editMessage(e)
-                setEdit(null)
-              }
-            : chat.id === "new"
-              ? () => {}
-              : (e) => {
-                  sendMessage(e)
-                  if (isNew) router.push(chat.id)
-                  setReply(null)
-                }
-        }
+        action={formAction}
         onSubmit={(e) => {
           if (chat.id === "new") e.preventDefault()
         }}
+        onBlur={(e) => {
+          if (e.relatedTarget != submitBtn.current) {
+            setEdit(null)
+            setReply(null)
+          }
+        }}
       >
-        {edit && (
-          <div className="relative h-8">
-            <label
-              htmlFor="message-input"
-              className="absolute w-11/12 rounded-3xl bg-sunset px-5 pb-[48px] pt-2 text-white"
-            >
-              <h4 className="text-sm">editing message</h4>
-            </label>
-          </div>
-        )}
-        {reply && (
-          <div className="relative h-8">
-            <label
-              htmlFor="message-input"
-              className="absolute w-11/12 rounded-3xl bg-sunset px-5 pb-[48px] pt-2 text-white"
-            >
-              <h4 className="text-sm">
+        <div className="flex w-full flex-col">
+          <div className="relative w-full">
+            {edit && (
+              <div className="mb-2 rounded-2xl bg-sunset/95 px-4 py-2 text-xs text-white shadow-sm">
+                editing message
+              </div>
+            )}
+
+            {reply && (
+              <div className="mb-2 rounded-2xl bg-sunset/95 px-3 py-2 text-xs text-white shadow-sm">
                 replying to{" "}
-                {reply.authorId === user.id ? "yourself" : reply.author.name}
-              </h4>
-            </label>
-          </div>
-        )}
-        <div className="flex w-full gap-2">
-          <div className="z-10 w-full rounded-full bg-light">
-            <input
-              placeholder={
-                edit
-                  ? "type to edit message"
-                  : chat.id === "new"
-                    ? "create chat to send message"
-                    : `message ${formatChatName(chat, user.id)}`
-              }
-              type="text"
-              className="input w-full bg-slate-300 bg-opacity-20"
-              name="text"
-              autoComplete="off"
-              defaultValue={edit?.text || ""}
-              onChange={(e) =>
-                edit && setEdit({ ...edit, text: e.target.value })
-              }
-              onFocus={() => {
-                const handleKeyDown = (e: KeyboardEvent) => {
+                <span className="font-semibold">
+                  {reply.authorId === user.id ? "yourself" : reply.author.name}
+                </span>
+              </div>
+            )}
+            <div className="flex w-full items-center gap-2">
+              <input
+                placeholder={
+                  edit
+                    ? "type to edit message"
+                    : chat.id === "new"
+                      ? "create chat to send message"
+                      : `message ${formatChatName(chat, user.id)}`
+                }
+                type="text"
+                className="input flex-1"
+                name="text"
+                autoComplete="off"
+                maxLength={500}
+                defaultValue={edit?.text || ""}
+                onChange={(e) =>
+                  edit && setEdit({ ...edit, text: e.target.value })
+                }
+                onKeyDown={(e) => {
                   if (e.key === "Escape") {
+                    setReply(null)
                     setEdit(null)
-                    inputRef.current?.blur()
                   }
-                }
-                window.addEventListener("keydown", handleKeyDown)
-                return () => {
-                  window.removeEventListener("keydown", handleKeyDown)
-                }
-              }}
-              onBlur={() => {
-                edit && setEdit(null)
-                reply && setReply(null)
-              }}
-              ref={inputRef}
-            />
+                }}
+                ref={inputRef}
+              />
+              <button
+                ref={submitBtn}
+                type="submit"
+                className="rounded-full bg-sunset bg-opacity-90 px-5 py-[15px] text-sm text-white shadow-md transition-all hover:bg-opacity-70"
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
+
+            {edit && (
+              <input
+                type="hidden"
+                name="message-id"
+                value={edit.message.id}
+                readOnly
+              />
+            )}
+            {reply && (
+              <input type="hidden" name="reply-id" value={reply?.id} readOnly />
+            )}
+            <input hidden name="chat-id" value={chat.id} readOnly />
+            <input hidden name="user-id" value={user.id} readOnly />
           </div>
-          {edit && (
-            <input
-              type="hidden"
-              name="message-id"
-              value={edit.message.id}
-              readOnly
-            />
-          )}
-          {reply && (
-            <input type="hidden" name="reply-id" value={reply?.id} readOnly />
-          )}
-          <input hidden name="chat-id" value={chat.id} readOnly />
-          <input hidden name="user-id" value={user.id} readOnly />
-          <button
-            type="submit"
-            className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition-all hover:bg-opacity-70"
-          >
-            <FaPaperPlane />
-          </button>
         </div>
       </Form>
     </div>

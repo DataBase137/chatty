@@ -43,11 +43,11 @@ export const getChats = async (id: string): Promise<Chat[]> => {
 
 export const getMessages = async (chatId: string): Promise<Message[]> => {
   try {
-    const messages = await prisma.message.findMany({
+    const messages: Message[] = await prisma.message.findMany({
       where: { chatId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
       include: {
-        author: true,
+        author: { select: { name: true, email: true, id: true } },
         reactions: {
           include: { user: { select: { name: true, id: true, email: true } } },
         },
@@ -59,7 +59,7 @@ export const getMessages = async (chatId: string): Promise<Message[]> => {
       },
     })
 
-    return messages.reverse() as Message[] | []
+    return messages
   } catch (error) {
     console.error(error)
     return []
@@ -281,8 +281,27 @@ export const unsendMessage = async (
       where: { id: messageId },
     })
 
+    const lastMessage: Message | null = await prisma.message.findFirst({
+      where: { chatId },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        author: { select: { name: true, email: true, id: true } },
+        reactions: {
+          include: { user: { select: { name: true, id: true, email: true } } },
+        },
+        parent: {
+          include: {
+            author: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    })
+
     await pusher.trigger(`chat-${chatId}`, "unsend-message", {
       messageId,
+      lastMessage,
     })
   } catch (error) {
     console.error(error)
@@ -315,6 +334,11 @@ export const editMessage = async (formData: FormData): Promise<void> => {
         reactions: {
           include: {
             user: { select: { name: true, id: true, email: true } },
+          },
+        },
+        parent: {
+          include: {
+            author: { select: { id: true, name: true, email: true } },
           },
         },
       },

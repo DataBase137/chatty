@@ -61,6 +61,7 @@ interface ChatProps {
 }
 
 const Chat: FC<ChatProps> = ({ chat, globChatId, user }) => {
+  const chatName = formatChatName(chat, user?.id || "")
   return (
     <Link
       className={`flex flex-col gap-1 rounded-2xl bg-slate-300 ${chat.id === globChatId ? "bg-opacity-70" : "bg-opacity-20 hover:bg-opacity-40"} px-5 py-4 transition-all`}
@@ -68,8 +69,9 @@ const Chat: FC<ChatProps> = ({ chat, globChatId, user }) => {
       key={chat.id}
     >
       <div className="flex w-full justify-between">
-        <h3 className="text-[0.95rem] font-semibold">
-          {formatChatName(chat, user?.id || "")}
+        <h3 className="text-nowrap text-[0.95rem] font-semibold">
+          {chatName.slice(0, 29)}
+          {chatName.length >= 29 ? "..." : ""}
         </h3>
 
         <DateFormat

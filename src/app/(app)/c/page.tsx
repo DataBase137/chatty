@@ -1,7 +1,14 @@
 import { NextPage } from "next"
+import { Suspense } from "react"
+import { FriendsSkeleton } from "@/components/skeletons/friends"
+import FriendsWrapper from "@/containers/chat/friends/wrapper"
 
 const Page: NextPage = () => {
-  return <></>
+  return (
+    <Suspense fallback={<FriendsSkeleton />}>
+      <FriendsWrapper />
+    </Suspense>
+  )
 }
 
 export default Page
