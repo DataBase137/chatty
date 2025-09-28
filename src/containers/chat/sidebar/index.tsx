@@ -9,18 +9,24 @@ import { formatChatName } from "@/hooks/formatChatName"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { usePusher } from "@/hooks/usePusher"
+import ChatModal from "../modal"
 
 interface SidebarProps {
   initChats: Chat[]
   user: User
+  friends: Friend[]
 }
 
-const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
+const Sidebar: FC<SidebarProps> = ({ initChats, user, friends }) => {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [chats, setChats] = useState<Chat[]>(initChats)
   const pathname = usePathname()
   const globChatId = pathname.slice(3)
   const router = useRouter()
+  const [modal, setModal] = useState<{ open: boolean; chat: Chat | null }>({
+    open: false,
+    chat: null,
+  })
 
   useEffect(() => {
     setChats((prevChats) => prevChats.filter((chat) => chat.id !== "new"))
@@ -56,8 +62,10 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
         return [data.chat, ...prev]
       })
 
+      const chatId = data.chat.id
+
       subscribe(
-        `chat-${data.chat.id}`,
+        `chat-${chatId}`,
         "new-message",
         (data: { message: Message }) => {
           setChats((prev) => {
@@ -79,7 +87,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
       )
 
       subscribe(
-        `chat-${data.chat.id}`,
+        `chat-${chatId}`,
         "unsend-message",
         (data: { messageId: string; lastMessage: Message | null }) => {
           setChats((prev) => {
@@ -112,7 +120,7 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
       )
 
       subscribe(
-        `chat-${data.chat.id}`,
+        `chat-${chatId}`,
         "edit-message",
         (data: { message: Message }) => {
           setChats((prev) => {
@@ -133,43 +141,56 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
         }
       )
 
-      subscribe(
-        `chat-${data.chat.id}`,
-        "rename-chat",
-        (data: { chat: Chat }) => {
-          setChats((prev) => {
-            const idx = prev.findIndex((c) => c.id === data.chat.id)
-            if (idx === -1) return prev
+      subscribe(`chat-${chatId}`, "rename-chat", (data: { chat: Chat }) => {
+        setChats((prev) => {
+          const idx = prev.findIndex((c) => c.id === data.chat.id)
+          if (idx === -1) return prev
 
-            const newChats = [...prev]
-            newChats[idx] = {
-              ...newChats[idx],
-              name: data.chat.name,
-            }
+          const newChats = [...prev]
+          newChats[idx] = {
+            ...newChats[idx],
+            name: data.chat.name,
+          }
 
-            return newChats
-          })
-        }
-      )
+          return newChats
+        })
+      })
 
-      subscribe(
-        `chat-${data.chat.id}`,
-        "leave-chat",
-        (data: { chat: Chat }) => {
-          setChats((prev) => {
-            const idx = prev.findIndex((c) => c.id === data.chat.id)
-            if (idx === -1) return prev
+      subscribe(`chat-${chatId}`, "leave-chat", (data: { chat: Chat }) => {
+        setChats((prev) => {
+          const idx = prev.findIndex((c) => c.id === data.chat.id)
+          if (idx === -1) return prev
 
-            const newChats = [...prev]
-            newChats[idx] = {
-              ...newChats[idx],
-              participants: data.chat.participants,
-            }
+          const newChats = [...prev]
+          newChats[idx] = {
+            ...newChats[idx],
+            participants: data.chat.participants,
+          }
 
-            return newChats
-          })
-        }
-      )
+          return newChats
+        })
+      })
+
+      subscribe(`chat-${chatId}`, "add-user", (data: { chat: Chat }) => {
+        setChats((prev) => {
+          const idx = prev.findIndex((c) => c.id === data.chat.id)
+          if (idx === -1) return prev
+
+          const newChats = [...prev]
+          newChats[idx] = {
+            ...newChats[idx],
+            participants: data.chat.participants,
+          }
+
+          return newChats
+        })
+      })
+
+      subscribe(`chat-${chatId}`, "delete-chat", (data: { chatId: string }) => {
+        setChats((prev) => prev.filter((c) => c.id !== data.chatId))
+        unsubscribe(`chat-${chatId}`)
+        if (data.chatId === globChatId) router.push("/c")
+      })
     })
 
     initChats.forEach((c) => {
@@ -291,6 +312,21 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
         }
       })
 
+      subscribe(`chat-${c.id}`, "add-user", (data: { chat: Chat }) => {
+        setChats((prev) => {
+          const idx = prev.findIndex((c) => c.id === data.chat.id)
+          if (idx === -1) return prev
+
+          const newChats = [...prev]
+          newChats[idx] = {
+            ...newChats[idx],
+            participants: data.chat.participants,
+          }
+
+          return newChats
+        })
+      })
+
       subscribe(`chat-${c.id}`, "delete-chat", (data: { chatId: string }) => {
         setChats((prev) => prev.filter((c) => c.id !== data.chatId))
         unsubscribe(`chat-${c.id}`)
@@ -300,69 +336,80 @@ const Sidebar: FC<SidebarProps> = ({ initChats, user }) => {
   }, [user, initChats, subscribe, globChatId, router, unsubscribe])
 
   return (
-    <div className="flex h-full min-w-80 flex-col gap-3 px-4">
-      <div className="flex flex-col gap-3 pb-2">
-        <div className="flex items-center justify-between">
-          <h1 className="pl-1">chats</h1>
-
-          <Link
-            className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
-            href="/c/new"
-          >
-            <FaPlus />
-          </Link>
-        </div>
-
-        <input
-          type="text"
-          placeholder="search chats"
-          autoComplete="off"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="input"
+    <>
+      {modal.open && modal.chat && (
+        <ChatModal
+          onClose={() => setModal({ open: false, chat: null })}
+          initFriends={friends}
+          chat={modal.chat}
         />
-      </div>
-      <div className="flex h-full flex-col gap-2 overflow-y-auto">
-        {chats &&
-          chats
-            .filter((chat) =>
-              formatChatName(chat, user.id || "")
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase())
-            )
-            .map((chat) => (
-              <Chat
-                key={chat.id}
-                chat={chat}
-                globChatId={globChatId}
-                user={user}
-              />
-            ))}
-      </div>
+      )}
 
-      <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70 shadow-sm">
-        <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
-          {user.name}
-        </p>
+      <div className="flex h-full min-w-80 flex-col gap-3 px-4">
+        <div className="flex flex-col gap-3 pb-2">
+          <div className="flex items-center justify-between">
+            <h1 className="pl-1">chats</h1>
 
-        <div className="flex items-center gap-0.5">
-          <Link
-            className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
-            href="/settings"
-          >
-            <FaGear />
-          </Link>
+            <Link
+              className="rounded-full bg-sunset bg-opacity-90 px-5 py-3 text-sm text-white shadow-md transition hover:bg-opacity-70"
+              href="/c/new"
+            >
+              <FaPlus />
+            </Link>
+          </div>
 
-          <button
-            className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
-            name="log out"
-            onClick={logOut}
-          >
-            <FaRightFromBracket />
-          </button>
+          <input
+            type="text"
+            placeholder="search chats"
+            autoComplete="off"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div className="flex h-full flex-col gap-2 overflow-y-auto">
+          {chats &&
+            chats
+              .filter((chat) =>
+                formatChatName(chat, user.id || "")
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase())
+              )
+              .map((chat) => (
+                <Chat
+                  key={chat.id}
+                  chat={chat}
+                  globChatId={globChatId}
+                  user={user}
+                  openModal={() => setModal({ open: true, chat })}
+                />
+              ))}
+        </div>
+
+        <div className="flex w-full justify-between rounded-[1.5rem] bg-slate-300 bg-opacity-20 px-3 py-1.5 text-opacity-70 shadow-sm">
+          <p className="flex h-full flex-col justify-center pl-2 text-sm font-medium">
+            {user.name}
+          </p>
+
+          <div className="flex items-center gap-0.5">
+            <Link
+              className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+              href="/settings"
+            >
+              <FaGear />
+            </Link>
+
+            <button
+              className="rounded-2xl p-2.5 text-sm transition hover:bg-red-300 hover:bg-opacity-40"
+              name="log out"
+              onClick={logOut}
+            >
+              <FaRightFromBracket />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

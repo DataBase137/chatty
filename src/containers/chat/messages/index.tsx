@@ -5,7 +5,7 @@ import Message from "@/components/chat/message"
 import { formatChatName } from "@/hooks/formatChatName"
 import { User } from "@prisma/client"
 import Link from "next/link"
-import { FC, useEffect, useRef, useState } from "react"
+import { FC, useCallback, useEffect, useRef, useState } from "react"
 import { FaArrowLeft, FaPaperPlane, FaPlus } from "react-icons/fa6"
 import Form from "next/form"
 import { usePathname, useRouter } from "next/navigation"
@@ -172,6 +172,14 @@ const Messages: FC<MessagesProps> = ({
 
   const { subscribe } = usePusher()
 
+  const updateChat = useCallback(
+    (chat: Chat) => {
+      setChat(chat)
+      setChatName(formatChatName(chat, user.id))
+    },
+    [user.id]
+  )
+
   useEffect(() => {
     subscribe(`chat-${chat.id}`, "new-message", (data: { message: Message }) =>
       setMessages((prev) => [...prev, data.message])
@@ -199,16 +207,18 @@ const Messages: FC<MessagesProps> = ({
       )
     )
 
-    subscribe(`chat-${chat.id}`, "rename-chat", (data: { chat: Chat }) => {
-      setChat(data.chat)
-      setChatName(formatChatName(data.chat, user.id))
-    })
+    subscribe(`chat-${chat.id}`, "rename-chat", (data: { chat: Chat }) =>
+      updateChat(data.chat)
+    )
 
-    subscribe(`chat-${chat.id}`, "leave-chat", (data: { chat: Chat }) => {
-      setChat(data.chat)
-      setChatName(formatChatName(data.chat, user.id))
-    })
-  }, [chat.id, subscribe, user.id])
+    subscribe(`chat-${chat.id}`, "leave-chat", (data: { chat: Chat }) =>
+      updateChat(data.chat)
+    )
+
+    subscribe(`chat-${chat.id}`, "add-user", (data: { chat: Chat }) =>
+      updateChat(data.chat)
+    )
+  }, [chat.id, subscribe, updateChat])
 
   useEffect(() => {
     if (isNew) {

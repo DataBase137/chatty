@@ -68,6 +68,7 @@ interface ChatProps {
   chat: Chat
   globChatId: string | null
   user: User
+  openModal: () => void
 }
 
 const initContextMenu = { show: false, x: 0, y: 0 }
@@ -80,7 +81,8 @@ const ContextMenu: FC<{
   userId: string
   chat: Chat
   handleRename: () => void
-}> = ({ show, x, y, onClose, userId, chat, handleRename }) => {
+  openModal: () => void
+}> = ({ show, x, y, onClose, userId, chat, handleRename, openModal }) => {
   const ref = useRef<HTMLDivElement>(null)
   useOnClickOutside(ref, onClose)
   const leave = chat.participants.length > 3
@@ -109,11 +111,12 @@ const ContextMenu: FC<{
       </button>
       <button
         onClick={() => {
+          openModal()
           onClose()
         }}
         className="flex items-center justify-between gap-2 text-nowrap rounded-b-md rounded-t-lg px-2.5 py-1.5 hover:bg-slate-200 hover:bg-opacity-50"
       >
-        <p className="text-xs">add user</p>
+        <p className="text-xs">add users</p>
         <FaUserPlus className="text-[0.6rem]" />
       </button>
       <div className="mx-1 flex items-center justify-center py-0.5">
@@ -137,7 +140,7 @@ const ContextMenu: FC<{
   )
 }
 
-const Chat: FC<ChatProps> = ({ chat, globChatId, user }) => {
+const Chat: FC<ChatProps> = ({ chat, globChatId, user, openModal }) => {
   const chatName = formatChatName(chat, user.id || "")
   const [hover, setHover] = useState(false)
   const [contextMenu, setContextMenu] = useState(initContextMenu)
@@ -187,6 +190,7 @@ const Chat: FC<ChatProps> = ({ chat, globChatId, user }) => {
         userId={user.id}
         chat={chat}
         handleRename={handleRename}
+        openModal={openModal}
       />
 
       <div

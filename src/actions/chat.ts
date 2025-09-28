@@ -13,10 +13,13 @@ const pusher = new Pusher({
   useTLS: true,
 })
 
-export const getChats = async (id: string): Promise<Chat[]> => {
+export const getChats = async (): Promise<Chat[]> => {
+  const user = await getUser()
+  if (!user) return []
+
   try {
     const chats: Chat[] = await prisma.chat.findMany({
-      where: { participants: { some: { id } } },
+      where: { participants: { some: { id: user.id } } },
       include: {
         participants: {
           select: {
@@ -428,6 +431,39 @@ export const deleteChat = async (chatId: string) => {
 
     pusher.trigger(`chat-${chatId}`, "delete-chat", {
       chatId,
+    })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const addUsers = async (chatId: string, users: string[]) => {
+  try {
+    const chat = await prisma.chat.update({
+      where: { id: chatId },
+      data: {
+        participants: {
+          connect: users.map((id) => ({ id })),
+        },
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { author: { select: { name: true } } },
+        },
+      },
+    })
+
+    pusher.trigger(`chat-${chatId}`, "add-user", {
+      chat,
     })
   } catch (error) {
     console.error(error)

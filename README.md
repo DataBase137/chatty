@@ -12,6 +12,7 @@ made with nextjs, tailwindcss, prisma, and pusher
 - edit, unsend, and react, and reply to messages
 - change account details and delete accounts
 - rename, leave and delete chats
+- add friends to chats
 
 ## roadmap
 
@@ -21,7 +22,7 @@ made with nextjs, tailwindcss, prisma, and pusher
 | postgres database with prisma accelerate | true      |
 | realtime messaging with pusher           | true      |
 | friends and dms                          | true      |
-| separate chat management                 | false     |
+| separate chat management                 | true      |
 | account customization and profiles       | false     |
 | mobile layout and responsive design      | true      |
 | dark mode and customization              | false     |
