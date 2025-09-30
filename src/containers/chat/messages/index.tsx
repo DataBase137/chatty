@@ -10,6 +10,9 @@ import { FaArrowLeft, FaPaperPlane, FaPlus } from "react-icons/fa6"
 import Form from "next/form"
 import { usePathname, useRouter } from "next/navigation"
 import { usePusher } from "@/hooks/usePusher"
+import { FaRegSmile } from "react-icons/fa"
+import EmojiPicker from "emoji-picker-react"
+import { useOnClickOutside } from "@/hooks/useOnClickOutside"
 
 interface MessagesProps {
   initChat: Chat
@@ -169,6 +172,9 @@ const Messages: FC<MessagesProps> = ({
   const isNew = pathname === "/c/new"
   const submitBtn = useRef<HTMLButtonElement>(null)
   const [chatName, setChatName] = useState(formatChatName(chat, user.id))
+  const [emoji, setEmoji] = useState(false)
+  const emojiRef = useRef<HTMLDivElement>(null)
+  useOnClickOutside(emojiRef, () => setEmoji(false))
 
   const { subscribe } = usePusher()
 
@@ -348,6 +354,26 @@ const Messages: FC<MessagesProps> = ({
                 </span>
               </div>
             )}
+            <div className="flex w-full justify-end">
+              {emoji && (
+                <div className="relative bottom-2" ref={emojiRef}>
+                  <EmojiPicker
+                    className="shadow-lg"
+                    onEmojiClick={async (e) => {
+                      setEmoji(false)
+                      if (inputRef.current) {
+                        inputRef.current.value += e.emoji
+                        await inputRef.current.focus()
+                        inputRef.current.setSelectionRange(
+                          inputRef.current.value.length,
+                          inputRef.current.value.length
+                        )
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
             <div className="flex w-full items-center gap-2">
               <input
                 placeholder={
@@ -374,6 +400,15 @@ const Messages: FC<MessagesProps> = ({
                 }}
                 ref={inputRef}
               />
+              <div className="relative -left-12 w-0">
+                <button
+                  type="button"
+                  onClick={() => setEmoji(true)}
+                  className={`rounded-2xl p-2.5 text-sm transition hover:bg-slate-300/50 ${emoji && "bg-slate-300/50"}`}
+                >
+                  <FaRegSmile />
+                </button>
+              </div>
               <button
                 ref={submitBtn}
                 type="submit"

@@ -125,23 +125,23 @@ const ChatModal: FC<PageProps> = ({ onClose, initFriends, chat }) => {
               className="min-w-[120px] flex-1 border-none bg-transparent py-2 text-sm focus:outline-none"
               ref={chatInputRef}
             />
-          </div>
 
-          {suggestions.length > 0 && (
-            <div className="absolute z-30 mt-12 box-border flex w-1/2 flex-col gap-1 rounded-[0.85rem] bg-slate-50 px-2 py-2 shadow-lg">
-              {suggestions.map((friend) => (
-                <button
-                  key={friend.id}
-                  type="button"
-                  onClick={() => handleSelect(friend)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-200/50"
-                >
-                  <span className="text-sm">{friend.name}</span>
-                  <span className="text-xs opacity-80">{friend.email}</span>
-                </button>
-              ))}
-            </div>
-          )}
+            {suggestions.length > 0 && (
+              <div className="absolute left-6 top-32 z-30 box-border flex w-3/4 flex-col gap-1 rounded-[0.85rem] bg-slate-50 px-2 py-2 shadow-lg">
+                {suggestions.map((friend) => (
+                  <button
+                    key={friend.id}
+                    type="button"
+                    onClick={() => handleSelect(friend)}
+                    className="flex w-full items-center gap-3 overflow-hidden rounded-lg px-3 py-2 hover:bg-slate-200/50"
+                  >
+                    <span className="text-sm">{friend.name}</span>
+                    <span className="text-xs opacity-80">{friend.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             type="submit"

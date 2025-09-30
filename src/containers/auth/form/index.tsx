@@ -4,10 +4,12 @@ import { authenticate } from "@/actions/auth"
 import { FC, useState, useEffect } from "react"
 import Link from "next/link"
 import Form from "next/form"
+import { FaEye, FaEyeSlash } from "react-icons/fa6"
 
 const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
   const [status, setStatus] = useState("")
   const [pending, setPending] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -56,6 +58,7 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
                 autoComplete="off"
                 required
                 minLength={2}
+                maxLength={21}
                 className={`input ${
                   nameError ? "ring-red-500" : "valid:ring-green-500"
                 }`}
@@ -89,24 +92,37 @@ const AuthForm: FC<{ username?: boolean }> = ({ username }) => {
             }}
           />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="password"
-            autoComplete={username ? "new-password" : "current-password"}
-            required
-            minLength={6}
-            className={`input ${
-              passwordError ? "ring-red-500" : "valid:ring-green-500"
-            }`}
-            value={password}
-            onChange={(e) => {
-              e.currentTarget.setCustomValidity("")
-              setPassword(e.target.value)
-              setPasswordError("")
-              setStatus("")
-            }}
-          />
+          <div className="flex w-full">
+            <input
+              name="password"
+              type={isVisible ? "text" : "password"}
+              autoComplete={username ? "new-password" : "current-password"}
+              minLength={6}
+              maxLength={30}
+              className={`input ${
+                passwordError ? "ring-red-500" : "valid:ring-green-500"
+              }`}
+              placeholder="password"
+              value={password}
+              onChange={(e) => {
+                e.currentTarget.setCustomValidity("")
+                setPassword(e.target.value)
+                setPasswordError("")
+                setStatus("")
+              }}
+              required
+            />
+            <div className="relative -left-10 top-1.5 w-0">
+              <button
+                type="button"
+                onClick={() => setIsVisible((prev) => !prev)}
+                className="rounded-2xl p-2.5 text-sm transition hover:bg-slate-300 hover:bg-opacity-40"
+                aria-label={isVisible ? "hide password" : "show password"}
+              >
+                {isVisible ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
         </div>
 
         <p className="h-5 pl-2 pt-1 text-xs text-red-600">

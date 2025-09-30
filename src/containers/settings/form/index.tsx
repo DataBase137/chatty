@@ -21,6 +21,7 @@ const PasswordField: FC<{
         type={isVisible ? "text" : "password"}
         autoComplete={name}
         minLength={6}
+        maxLength={30}
         className="input"
         placeholder={placeholder}
       />
