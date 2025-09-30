@@ -171,10 +171,14 @@ const Messages: FC<MessagesProps> = ({
   const router = useRouter()
   const isNew = pathname === "/c/new"
   const submitBtn = useRef<HTMLButtonElement>(null)
+  const emojiBtn = useRef<HTMLButtonElement>(null)
   const [chatName, setChatName] = useState(formatChatName(chat, user.id))
   const [emoji, setEmoji] = useState(false)
   const emojiRef = useRef<HTMLDivElement>(null)
-  useOnClickOutside(emojiRef, () => setEmoji(false))
+  useOnClickOutside(emojiRef, (e) => {
+    if (emojiBtn.current && emojiBtn.current.contains(e.target as Node)) return
+    setEmoji(false)
+  })
 
   const { subscribe } = usePusher()
 
@@ -356,9 +360,9 @@ const Messages: FC<MessagesProps> = ({
             )}
             <div className="flex w-full justify-end">
               {emoji && (
-                <div className="relative bottom-2" ref={emojiRef}>
+                <div className="absolute bottom-12" ref={emojiRef}>
                   <EmojiPicker
-                    className="shadow-lg"
+                    className="relative z-30 shadow-lg"
                     onEmojiClick={async (e) => {
                       setEmoji(false)
                       if (inputRef.current) {
@@ -403,7 +407,8 @@ const Messages: FC<MessagesProps> = ({
               <div className="relative -left-12 w-0">
                 <button
                   type="button"
-                  onClick={() => setEmoji(true)}
+                  ref={emojiBtn}
+                  onClick={() => setEmoji((prev) => !prev)}
                   className={`rounded-2xl p-2.5 text-sm transition hover:bg-slate-300/50 ${emoji && "bg-slate-300/50"}`}
                 >
                   <FaRegSmile />
